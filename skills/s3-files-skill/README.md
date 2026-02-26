@@ -31,14 +31,11 @@ Perfect for sharing logs, screenshots, packages, or any files with automatic exp
   - `s3:GetObject`
 - **Node.js** >= 18.0.0
 - **S3 Bucket** (can be private)
+- OpenClaw installed on an EC2 instance in AWS cloud
 
 ## Installation
 
-### 1. Install OpenClaw
-
-Follow the [OpenClaw installation guide](https://docs.openclaw.ai/)
-
-### 2. Install the Skill
+### 1. Install the Skill
 
 ```bash
 cd ~/.openclaw/workspace/skills
@@ -48,7 +45,7 @@ cd s3-files
 npm install
 ```
 
-### 3. Configure
+### 2. Configure
 
 Copy the example config:
 
@@ -67,7 +64,7 @@ Edit `config.json` with your settings:
 }
 ```
 
-### 4. Set Up IAM Permissions
+### 3. Set Up IAM Permissions
 
 Create an IAM policy with these permissions:
 
@@ -89,7 +86,7 @@ Create an IAM policy with these permissions:
 
 Attach to your IAM user or role.
 
-### 5. Configure AWS Credentials
+### 4. Configure AWS Credentials
 
 ```bash
 aws configure
