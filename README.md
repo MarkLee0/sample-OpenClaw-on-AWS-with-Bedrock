@@ -286,6 +286,9 @@ Featured: [openclaw-aws-backup-skill](https://github.com/genedragon/openclaw-aws
 #### Kiro CLI Skill 
 Featured: [openclaw-kirocli-skill](skills/openclaw-kirocli-skill/) - Deep integration with AWS Kiro CLI for AI-powered coding tasks.
 
+#### S3 Files Skill
+Featured: [s3-files-skill](skills/s3-files-skill/) - Upload and share files via S3 with time-limited pre-signed URLs. Generate download links, create upload pages for receiving files, and manage secure file sharing without exposing S3 buckets publicly.
+
 ### Using openclaw
 
 #### Send Messages
@@ -486,6 +489,18 @@ CreateVPCEndpoints: true   # Recommended for production
 CreateVPCEndpoints: false  # For cost optimization
   # Pros: Save $22/month
   # Cons: Traffic goes through public internet
+```
+
+### Sandbox Mode
+
+```yaml
+EnableSandbox: true   # Default: Docker installed
+  # Provides isolated execution for code in group chats
+  # Recommended for shared/team use
+
+EnableSandbox: false  # Skip Docker installation
+  # Faster deployment (~2 min saved)
+  # Use for personal/single-user deployments
 ```
 
 ## Security Features
