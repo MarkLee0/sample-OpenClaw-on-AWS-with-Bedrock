@@ -559,7 +559,7 @@ Resources:
           usermod -aG docker ubuntu
 
           mkdir -p /etc/docker
-          echo '{"registry-mirrors":["https://mirror-docker.bosicloud.com"]}' > /etc/docker/daemon.json
+          echo '{"registry-mirrors":["https://mirror-docker.bosicloud.com","https://docker.1ms.run"]}' > /etc/docker/daemon.json
           systemctl restart docker
 
           echo "[5/9] Installing Node.js..."
