@@ -18,3 +18,6 @@ admin-console/node_modules/
 
 # Demo
 enterprise/demo/dist/
+
+# Blog (local only, not part of repo)
+enterprise/blog/
