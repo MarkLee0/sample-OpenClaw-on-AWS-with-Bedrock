@@ -21,3 +21,6 @@ enterprise/demo/dist/
 
 # Blog (local only, not part of repo)
 enterprise/blog/
+
+# Brand assets (local only)
+enterprise/catnip-mascot/
