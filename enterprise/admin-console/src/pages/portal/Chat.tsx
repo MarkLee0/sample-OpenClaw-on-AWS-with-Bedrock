@@ -176,12 +176,12 @@ export default function PortalChat() {
     // Build the message content — attach file content inline
     let fullContent = text;
     if (attachment) {
-      const header = `\n\n---\n**Attached file: ${attachment.name}** (${fmtSize(attachment.size)})`;
       if (attachment.isText && attachment.contentPreview) {
         const ext = attachment.name.split('.').pop() || '';
-        fullContent += `${header}\n\`\`\`${ext}\n${attachment.contentPreview}\n\`\`\``;
+        // Explicitly tell the agent the content is inline — prevents it from looking for a file path
+        fullContent += `\n\nI'm sharing the following file content with you directly in this message. The content is complete and ready for you to read and analyze — no need to access any file system or S3.\n\n**File: ${attachment.name}** (${fmtSize(attachment.size)})\n\`\`\`${ext}\n${attachment.contentPreview}\n\`\`\``;
       } else {
-        fullContent += `${header}\n(Binary file — ${attachment.type})`;
+        fullContent += `\n\n[Shared file: **${attachment.name}**, ${fmtSize(attachment.size)}, type: ${attachment.type}. Text content not available for this file type.]`;
       }
     }
 
