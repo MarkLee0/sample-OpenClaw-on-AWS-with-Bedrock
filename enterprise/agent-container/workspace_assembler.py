@@ -201,7 +201,47 @@ def assemble_workspace(
         except ClientError:
             pass
 
-    # 7. Generate IDENTITY.md if not present
+    # 7. Generate CHANNELS.md — IM channel bindings for outbound notification delivery.
+    # The heartbeat/cron system needs this to know where to send reminders.
+    # Written here (at assembly time) so always-on containers have it from cold start,
+    # before the first user message arrives.
+    channels_path = os.path.join(workspace, "CHANNELS.md")
+    try:
+        # Extract base employee ID the same way server.py does
+        base_id = tenant_id
+        parts = tenant_id.split("__")
+        if len(parts) >= 3:
+            base_id = parts[1]
+        elif len(parts) == 2:
+            base_id = parts[1]
+
+        prefix = f"/openclaw/{stack_name}/user-mapping/"
+        paginator = ssm_client.get_paginator("get_parameters_by_path")
+        channel_lines = []
+        for page in paginator.paginate(Path=prefix, Recursive=True):
+            for p in page.get("Parameters", []):
+                if p.get("Value") == base_id:
+                    key = p["Name"].replace(prefix, "")
+                    if "__" in key:
+                        ch, uid = key.split("__", 1)
+                        channel_lines.append(f"- **{ch}**: {uid}")
+        if channel_lines:
+            content = (
+                "# Notification Channels\n\n"
+                "When sending reminders or proactive notifications, use these channels:\n\n"
+                + "\n".join(channel_lines)
+                + "\n\nPrefer the first available channel in the list above.\n"
+                "For portal/webchat sessions, fall back to the IM channel listed here.\n"
+            )
+            with open(channels_path, "w") as f:
+                f.write(content)
+            logger.info("CHANNELS.md written: %s", channel_lines)
+        else:
+            logger.info("CHANNELS.md skipped: no IM pairings found for %s", base_id)
+    except Exception as e:
+        logger.warning("CHANNELS.md generation failed (non-fatal): %s", e)
+
+    # 9. Generate IDENTITY.md if not present
     identity_path = os.path.join(workspace, "IDENTITY.md")
     if not os.path.isfile(identity_path):
         identity = f"# Agent Identity\n\n- **Position:** {pos_id}\n- **Tenant:** {tenant_id}\n- **Company:** ACME Corp\n- **Platform:** OpenClaw Enterprise\n"
