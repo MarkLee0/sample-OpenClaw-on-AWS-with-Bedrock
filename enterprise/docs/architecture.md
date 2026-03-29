@@ -1127,12 +1127,17 @@ The platform uses two AWS regions intentionally:
 
 | Service | Region | Reason |
 |---------|--------|--------|
-| EC2, ECR, ECS, SSM, AgentCore | `us-east-1` (deployment region) | AgentCore only in us-east-1 / us-west-2 |
-| DynamoDB | `us-east-2` | Organizational choice; lower latency to US East users |
-| S3 | Global (bucket in deployment region) | S3 is globally accessible |
-| CloudWatch Logs | Deployment region | Co-located with compute |
+| EC2, ECR, ECS, SSM, AgentCore | `us-east-1` | `GATEWAY_REGION` |
+| DynamoDB | `us-east-2` | `AWS_REGION` / `DYNAMODB_REGION` |
+| S3 | Global (bucket in deployment region) | n/a |
+| CloudWatch Logs | `us-east-1` | `GATEWAY_REGION` |
 
-All code reads region from `AWS_REGION` env var (deployment region) or `DYNAMODB_REGION` for DynamoDB explicitly. No hardcoded region strings in production code.
+**Critical — never conflate AWS_REGION with the gateway region.** `start.sh` and `/etc/openclaw/env` set:
+- `AWS_REGION=us-east-2` — Python boto3 default region for DynamoDB
+- `GATEWAY_REGION=us-east-1` — EC2, SSM, ECS, AgentCore, ECR
+- `DYNAMODB_REGION=us-east-2` — explicit DynamoDB override
+
+`main.py._GATEWAY_REGION` reads `GATEWAY_REGION` first. If `AWS_REGION` were used instead, SSM/ECS calls would silently route to `us-east-2` (resources don't exist there) and return incorrect defaults without exceptions. This was the root cause of `isAlwaysOn: False` and `source: "agentcore"` appearing incorrectly in the Portal UI.
 
 ### 17.8 OpenClaw Upgrade Path
 
