@@ -129,6 +129,11 @@ Conditions:
   CreateNewVPC: !Equals [!Ref ExistingVpcId, ""]
   HasCustomBucketName: !Not [!Equals [!Ref WorkspaceBucketName, ""]]
   CreateEndpoints: !Equals [!Ref CreateVPCEndpoints, "true"]
+  # PrivateSubnet is only needed for VPC endpoints. Skip it when endpoints are disabled
+  # to avoid GuardDuty-managed ENIs blocking stack deletion.
+  CreatePrivateSubnet: !And
+    - !Condition CreateNewVPC
+    - !Condition CreateEndpoints
   AllowSSH: !Not [!Equals [!Ref AllowedSSHCIDR, "127.0.0.1/32"]]
   HasKeyPair: !Not [!Equals [!Ref KeyPairName, ""]]
   UseGraviton: !Or
@@ -190,7 +195,7 @@ Resources:
 
   PrivateSubnet:
     Type: AWS::EC2::Subnet
-    Condition: CreateNewVPC
+    Condition: CreatePrivateSubnet
     Properties:
       VpcId: !Ref OpenClawVPC
       CidrBlock: "10.0.2.0/24"

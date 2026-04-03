@@ -176,28 +176,92 @@ INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --re
 success "Stack ready — EC2: $INSTANCE_ID | S3: $S3_BUCKET"
 
 # ── Step 3: Build and push Docker image ───────────────────────────────────────
+# Always builds on the gateway EC2 (ARM64 Graviton, Docker pre-installed, fast ECR network).
+# No local Docker required. Source code is packaged → S3 → EC2 build → ECR push.
 if [ "$SKIP_DOCKER_BUILD" = "true" ]; then
   info "[3/7] Skipping Docker build (--skip-build)"
-  # If the target ECR repo is empty, copy image from the most recent existing repo
   IMAGE_COUNT=$(aws ecr describe-images --repository-name "${STACK_NAME}-multitenancy-agent" \
     --region "$REGION" --query 'length(imageDetails)' --output text 2>/dev/null || echo "0")
   if [ "$IMAGE_COUNT" = "0" ] || [ -z "$IMAGE_COUNT" ]; then
-    warn "  ECR repo ${ECR_URI} is empty."
-    warn "  Run without --skip-build to build and push a new image, or push manually:"
-    warn "    docker tag <existing-image> ${ECR_URI}:latest && docker push ${ECR_URI}:latest"
+    warn "  ECR repo is empty — image must be pushed before creating the AgentCore Runtime."
+    warn "  Re-run without --skip-build to trigger an EC2 build."
   else
     success "  ECR repo has $IMAGE_COUNT image(s)"
   fi
 else
-  info "[3/7] Building and pushing Agent Container (~10-15 min)..."
-  aws ecr get-login-password --region "$REGION" | \
-    docker login --username AWS --password-stdin "${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
-  docker build --platform linux/arm64 \
-    -f "$SCRIPT_DIR/agent-container/Dockerfile" \
-    -t "${ECR_URI}:latest" \
-    "$SCRIPT_DIR/.."
-  docker push "${ECR_URI}:latest"
-  success "Image pushed: ${ECR_URI}:latest"
+  info "[3/7] Building Agent Container on EC2 (~10-15 min, no local Docker needed)..."
+
+  # Wait for EC2 to be SSM-reachable (it just launched from CloudFormation)
+  info "  Waiting for EC2 SSM agent to become available..."
+  for i in $(seq 1 30); do
+    STATUS=$(aws ssm describe-instance-information \
+      --filters "Key=InstanceIds,Values=$INSTANCE_ID" \
+      --region "$REGION" --query 'InstanceInformationList[0].PingStatus' --output text 2>/dev/null || echo "")
+    [ "$STATUS" = "Online" ] && break
+    sleep 10
+  done
+  [ "$STATUS" != "Online" ] && error "EC2 SSM agent not reachable after 5 min. Check instance status."
+
+  # Package source (agent-container + exec-agent Dockerfiles + the whole enterprise dir for context)
+  info "  Packaging source code → S3..."
+  TARBALL="/tmp/agent-build-$$.tar.gz"
+  COPYFILE_DISABLE=1 tar czf "$TARBALL" \
+    -C "$SCRIPT_DIR/.." \
+    enterprise/agent-container \
+    enterprise/exec-agent 2>/dev/null || \
+  tar czf "$TARBALL" \
+    -C "$SCRIPT_DIR/.." \
+    enterprise/agent-container \
+    enterprise/exec-agent
+  aws s3 cp "$TARBALL" "s3://${S3_BUCKET}/_build/agent-build.tar.gz" \
+    --region "$REGION" --quiet
+  rm -f "$TARBALL"
+  success "  Source uploaded to S3"
+
+  # Run docker build on EC2 via SSM
+  info "  Running docker build on EC2 (this takes 10-15 min)..."
+  BUILD_CMD_ID=$(aws ssm send-command \
+    --instance-ids "$INSTANCE_ID" \
+    --document-name "AWS-RunShellScript" \
+    --region "$REGION" \
+    --timeout-seconds 1200 \
+    --parameters "commands=[
+      \"set -ex\",
+      \"ACCOUNT_ID=\$(aws sts get-caller-identity --query Account --output text)\",
+      \"ECR_URI=${ECR_URI}\",
+      \"cd /tmp && rm -rf agent-build && mkdir agent-build && cd agent-build\",
+      \"aws s3 cp s3://${S3_BUCKET}/_build/agent-build.tar.gz . --region ${REGION}\",
+      \"tar xzf agent-build.tar.gz\",
+      \"aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin \${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com\",
+      \"docker build -f enterprise/agent-container/Dockerfile -t \${ECR_URI}:latest .\",
+      \"docker push \${ECR_URI}:latest\",
+      \"echo BUILD_AND_PUSH_COMPLETE\"
+    ]" \
+    --query 'Command.CommandId' --output text)
+
+  info "  SSM command: $BUILD_CMD_ID — polling for completion..."
+  # Poll every 30s up to 20 minutes
+  for i in $(seq 1 40); do
+    sleep 30
+    BUILD_STATUS=$(aws ssm get-command-invocation \
+      --command-id "$BUILD_CMD_ID" \
+      --instance-id "$INSTANCE_ID" \
+      --region "$REGION" \
+      --query 'Status' --output text 2>/dev/null || echo "Pending")
+    case "$BUILD_STATUS" in
+      Success)
+        success "  Docker build + push complete"
+        break ;;
+      Failed|Cancelled|TimedOut)
+        STDERR=$(aws ssm get-command-invocation \
+          --command-id "$BUILD_CMD_ID" --instance-id "$INSTANCE_ID" \
+          --region "$REGION" --query 'StandardErrorContent' --output text 2>/dev/null | tail -20)
+        error "Docker build failed ($BUILD_STATUS):\n$STDERR" ;;
+      *)
+        echo -n "." ;;
+    esac
+  done
+  [ "$BUILD_STATUS" != "Success" ] && error "Docker build timed out after 20 min"
 fi
 
 # ── Step 4: AgentCore Runtime ─────────────────────────────────────────────────

@@ -4,8 +4,9 @@ set -ex
 # Get AWS account ID dynamically
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REGION="${AWS_REGION:-us-east-1}"
+STACK_NAME="${STACK_NAME:-openclaw-enterprise}"
 S3_BUCKET="${S3_BUCKET:-openclaw-tenants-${ACCOUNT_ID}}"
-ECR_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/openclaw-multitenancy-multitenancy-agent"
+ECR_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${STACK_NAME}-multitenancy-agent"
 LOG="/tmp/build.log"
 
 exec > >(tee "$LOG") 2>&1
