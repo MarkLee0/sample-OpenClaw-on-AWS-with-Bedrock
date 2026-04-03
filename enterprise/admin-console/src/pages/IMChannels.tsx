@@ -42,11 +42,11 @@ function shortDate(iso: string): string {
 
 const CHANNEL_LABELS: Record<string, string> = {
   telegram: 'Telegram', discord: 'Discord', feishu: 'Feishu / Lark',
-  slack: 'Slack', teams: 'Microsoft Teams', googlechat: 'Google Chat',
-  whatsapp: 'WhatsApp', wechat: 'WeChat',
+  dingtalk: 'DingTalk', slack: 'Slack', teams: 'Microsoft Teams',
+  googlechat: 'Google Chat', whatsapp: 'WhatsApp', wechat: 'WeChat',
 };
 
-const ENTERPRISE_CHANNELS = ['telegram', 'discord', 'feishu', 'dingtalk', 'slack', 'teams', 'googlechat', 'whatsapp'];
+const ENTERPRISE_CHANNELS = ['telegram', 'discord', 'feishu', 'dingtalk', 'slack', 'teams', 'googlechat', 'whatsapp', 'wechat'];
 
 // ─── Connection Row ───────────────────────────────────────────────────────────
 
