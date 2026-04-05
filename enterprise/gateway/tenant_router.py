@@ -200,6 +200,8 @@ _CHANNEL_ALIASES = {
     "imessage": "im",
     "googlechat": "gc",
     "webchat": "web",
+    "playground": "pgnd",
+    "twin": "twin",
 }
 
 
@@ -509,12 +511,16 @@ class TenantRouterHandler(BaseHTTPRequestHandler):
 
         try:
             if resolved_emp_id:
-                # Employee-scoped session: all channels for the same employee share ONE
-                # AgentCore session, just like standard OpenClaw Gateway manages multiple
-                # channels in a single process. This eliminates cross-channel MEMORY.md
-                # write conflicts and preserves natural cross-channel context — no changes
-                # to OpenClaw required.
-                tenant_id = derive_tenant_id("emp", resolved_emp_id)
+                # Twin and Playground get isolated sessions so they don't pollute
+                # the employee's real conversation history. workspace_assembler.py
+                # and server.py detect these prefixes (twin__, pgnd__) to inject
+                # mode-specific context (e.g. digital twin persona, read-only notice).
+                if channel in ("twin", "playground"):
+                    tenant_id = derive_tenant_id(channel, resolved_emp_id)
+                else:
+                    # Employee-scoped session: all IM channels + Portal share ONE
+                    # AgentCore session, preserving cross-channel context.
+                    tenant_id = derive_tenant_id("emp", resolved_emp_id)
             else:
                 # Fallback for users not yet in DynamoDB user-mapping (e.g. new users
                 # before pairing, or admin test accounts).

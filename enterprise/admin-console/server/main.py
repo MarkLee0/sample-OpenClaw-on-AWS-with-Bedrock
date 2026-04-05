@@ -1786,10 +1786,11 @@ def playground_send(body: PlaygroundMessage, authorization: str = Header(default
         router_url = os.environ.get("TENANT_ROUTER_URL", "http://localhost:8090")
         try:
             import requests as _req
-            # Use "portal" as channel — Tenant Router maps portal → "pt__" prefix (not "port__"),
-            # which avoids the Gateway portal-callback deadlock. See tenant_router.py _CHANNEL_ALIASES.
+            # Use "playground" channel so Tenant Router creates an isolated session
+            # (pgnd__emp-xxx__<hash>) that won't pollute the employee's real conversation.
+            # workspace_assembler.py detects "pgnd" prefix → SESSION_CONTEXT.md = Admin Test mode.
             r = _req.post(f"{router_url}/route", json={
-                "channel": "portal",
+                "channel": "playground",
                 "user_id": emp_id,
                 "message": body.message,
             }, timeout=180)

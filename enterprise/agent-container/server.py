@@ -1194,22 +1194,27 @@ class AgentCoreHandler(BaseHTTPRequestHandler):
                 daemon=True,
             ).start()
 
-            # Fire-and-forget: write conversation turn to DynamoDB for Session Detail view
-            threading.Thread(
-                target=_append_conversation_turn,
-                args=(tenant_id, message, response_text, model, duration_ms),
-                daemon=True,
-            ).start()
+            # Playground sessions are read-only: don't write conversation turns
+            # or sync memory back to the employee's S3 workspace.
+            is_playground = tenant_id.startswith("pgnd__")
 
-            # Fire-and-forget: immediately sync HEARTBEAT.md + memory to S3 after each turn.
-            # AgentCore microVMs may be killed (SIGKILL) after the response without SIGTERM,
-            # bypassing the cleanup() flush. Syncing here ensures reminders and memory
-            # reach S3 regardless of how the microVM terminates.
-            threading.Thread(
-                target=_sync_heartbeat_and_memory,
-                args=(base_id,),
-                daemon=True,
-            ).start()
+            if not is_playground:
+                # Fire-and-forget: write conversation turn to DynamoDB for Session Detail view
+                threading.Thread(
+                    target=_append_conversation_turn,
+                    args=(tenant_id, message, response_text, model, duration_ms),
+                    daemon=True,
+                ).start()
+
+                # Fire-and-forget: immediately sync HEARTBEAT.md + memory to S3 after each turn.
+                # AgentCore microVMs may be killed (SIGKILL) after the response without SIGTERM,
+                # bypassing the cleanup() flush. Syncing here ensures reminders and memory
+                # reach S3 regardless of how the microVM terminates.
+                threading.Thread(
+                    target=_sync_heartbeat_and_memory,
+                    args=(base_id,),
+                    daemon=True,
+                ).start()
 
             self._respond(200, {
                 "response": response_text,
