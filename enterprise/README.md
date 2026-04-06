@@ -632,7 +632,7 @@ cd enterprise/admin-console
 npm install && npm run build
 cd ../..
 
-COPYFILE_DISABLE=1 tar czf /tmp/admin-deploy.tar.gz -C enterprise/admin-console dist server
+COPYFILE_DISABLE=1 tar czf /tmp/admin-deploy.tar.gz -C enterprise/admin-console dist server start.sh
 aws s3 cp /tmp/admin-deploy.tar.gz "s3://${S3_BUCKET}/_deploy/admin-deploy.tar.gz"
 
 aws ssm send-command --instance-ids $INSTANCE_ID --region $REGION \
@@ -643,7 +643,8 @@ aws ssm send-command --instance-ids $INSTANCE_ID --region $REGION \
     \"aws s3 cp s3://${S3_BUCKET}/_deploy/admin-deploy.tar.gz /tmp/admin-deploy.tar.gz --region $REGION\",
     \"mkdir -p /opt/admin-console && tar xzf /tmp/admin-deploy.tar.gz -C /opt/admin-console\",
     \"chown -R ubuntu:ubuntu /opt/admin-console /opt/admin-venv\",
-    \"printf '[Unit]\\\\nDescription=OpenClaw Admin Console\\\\nAfter=network.target\\\\n[Service]\\\\nType=simple\\\\nUser=ubuntu\\\\nWorkingDirectory=/opt/admin-console/server\\\\nEnvironmentFile=-/etc/openclaw/env\\\\nExecStart=/opt/admin-venv/bin/python main.py\\\\nRestart=always\\\\nRestartSec=5\\\\n[Install]\\\\nWantedBy=multi-user.target' > /etc/systemd/system/openclaw-admin.service\",
+    \"chmod +x /opt/admin-console/start.sh\",
+    \"printf '[Unit]\\\\nDescription=OpenClaw Admin Console\\\\nAfter=network.target\\\\n[Service]\\\\nType=simple\\\\nUser=ubuntu\\\\nExecStart=/opt/admin-console/start.sh\\\\nRestart=always\\\\nRestartSec=5\\\\n[Install]\\\\nWantedBy=multi-user.target' > /etc/systemd/system/openclaw-admin.service\",
     \"systemctl daemon-reload && systemctl enable openclaw-admin && systemctl start openclaw-admin\"
   ]}"
 ```
@@ -905,7 +906,7 @@ vs ChatGPT Team ($25 × 50 = $1,250/mo) or Copilot ($30 × 50 = $1,500/mo).
 ```
 enterprise/
 ├── README.md
-├── deploy-multitenancy.sh          # One-click deployment
+├── deploy.sh                       # One-click deployment
 ├── clawdbot-bedrock-agentcore-multitenancy.yaml  # CloudFormation
 ├── admin-console/
 │   ├── src/pages/
@@ -920,7 +921,15 @@ enterprise/
 │   │       ├── Chat.tsx            # Employee chat + warmup indicator
 │   │       └── Profile.tsx         # USER.md + memory view + Digital Twin toggle
 │   └── server/
-│       ├── main.py                 # 50+ API endpoints
+│       ├── main.py                 # App bootstrap — routes in routers/
+│       ├── shared.py               # Auth helpers, config, SSM/DDB helpers
+│       ├── routers/                # 16 domain routers (127 API endpoints)
+│       │   ├── org.py agents.py bindings.py knowledge.py
+│       │   ├── portal.py playground.py monitor.py audit.py
+│       │   ├── usage.py settings.py security.py
+│       │   ├── admin_im.py admin_ai.py admin_always_on.py
+│       │   ├── gateway_proxy.py twin.py
+│       │   └── __init__.py
 │       ├── db.py                   # DynamoDB single-table + Digital Twin CRUD
 │       └── seed_*.py               # Sample data scripts
 ├── agent-container/                # AgentCore Docker image

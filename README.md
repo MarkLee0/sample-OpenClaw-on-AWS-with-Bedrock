@@ -60,7 +60,7 @@ INSTANCE_ID=$(aws cloudformation describe-stacks \
 
 aws ssm start-session \
   --target $INSTANCE_ID \
-  --region YOUR_REGION \
+  --region us-west-2  # change to your deployment region \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["18789"],"localPortNumber":["18789"]}'
 
@@ -231,7 +231,7 @@ Switch models with one CloudFormation parameter — no code changes:
 |-----------|---------|-------------|
 | `OpenClawModel` | Nova 2 Lite | Bedrock model ID |
 | `InstanceType` | c7g.large | EC2 instance type |
-| `CreateVPCEndpoints` | true | Private networking (+$22/mo) |
+| `CreateVPCEndpoints` | false | Private networking (+$22/mo) |
 | `EnableSandbox` | true | Docker isolation for code execution |
 | `EnableDataProtection` | false | Retain EBS volume on stack deletion |
 | `KeyPairName` | none | EC2 key pair (optional, for emergency SSH) |

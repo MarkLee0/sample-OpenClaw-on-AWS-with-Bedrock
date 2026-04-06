@@ -10,8 +10,8 @@ Environment=HOME=/home/ubuntu
 Environment=PROXY_PORT=8091
 Environment=TENANT_ROUTER_URL=http://127.0.0.1:8090
 EnvironmentFile=-/etc/openclaw/env
-# Node.js path: find with `su - ubuntu -c "which node"` and update if different
-ExecStart=/home/ubuntu/.nvm/versions/node/v22.22.2/bin/node /home/ubuntu/bedrock_proxy_h2.js
+# Use bash -lc so nvm is loaded from .bashrc — no hardcoded node version
+ExecStart=/bin/bash -lc "node /home/ubuntu/bedrock_proxy_h2.js"
 Restart=always
 RestartSec=5
 StandardOutput=journal
