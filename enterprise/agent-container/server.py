@@ -1089,8 +1089,45 @@ class AgentCoreHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/ping":
             self._respond(200, {"status": "Healthy", "time_of_last_update": int(time.time())})
+        elif self.path == "/gateway-dashboard":
+            self._handle_gateway_dashboard()
         else:
             self._respond(404, {"error": "not found"})
+
+    def _handle_gateway_dashboard(self):
+        """Run `openclaw dashboard --no-open` and return the dashboard URL.
+        This generates a fresh pairing token each time, so the caller can
+        open the Gateway Console without needing prior pairing setup."""
+        try:
+            env = os.environ.copy()
+            env["HOME"] = os.environ.get("HOME", "/root")
+            env["PATH"] = "/usr/local/bin:/usr/bin:/bin:" + env.get("PATH", "")
+            result = subprocess.run(
+                [OPENCLAW_BIN, "dashboard", "--no-open"],
+                capture_output=True, text=True, timeout=15, env=env,
+            )
+            output = result.stdout + result.stderr
+            # Extract URL: "Dashboard URL: http://127.0.0.1:18789/#token=abc123..."
+            url_match = re.search(r'(https?://\S+#token=\S+)', output)
+            if url_match:
+                url = url_match.group(1)
+                # Extract components
+                gw_token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")
+                dash_token_match = re.search(r'#token=([a-f0-9]+)', url)
+                dash_token = dash_token_match.group(1) if dash_token_match else ""
+                self._respond(200, {
+                    "url": url,
+                    "gatewayToken": gw_token,
+                    "dashboardToken": dash_token,
+                    "port": 18789,
+                })
+            else:
+                logger.warning("gateway-dashboard: no URL in output: %s", output[-200:])
+                self._respond(500, {"error": "Gateway dashboard URL not found", "output": output[-300:]})
+        except subprocess.TimeoutExpired:
+            self._respond(504, {"error": "Gateway dashboard timed out"})
+        except Exception as e:
+            self._respond(500, {"error": str(e)})
 
     def do_POST(self):
         if self.path != "/invocations":

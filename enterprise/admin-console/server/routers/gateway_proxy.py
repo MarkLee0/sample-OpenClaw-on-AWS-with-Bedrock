@@ -237,6 +237,39 @@ def get_gateway_access(authorization: str = Header(default="")):
     }
 
 
+@router.get("/dashboard")
+def get_gateway_dashboard(authorization: str = Header(default="")):
+    """Get a fresh Gateway Console dashboard URL with pairing token.
+    Calls the container's /gateway-dashboard endpoint which runs
+    `openclaw dashboard --no-open` and returns the pairing token.
+    The frontend can then construct the full proxied URL."""
+    user = _require_employee_auth(authorization)
+    result = _get_cached_gateway(user.employee_id)
+
+    if not result:
+        return {"available": False, "reason": "Agent is not always-on"}
+
+    base_url, gw_token = result
+    # Call container's /gateway-dashboard API (port 8080)
+    try:
+        resp = _requests.get(f"{base_url}/gateway-dashboard", timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            return {
+                "available": True,
+                "gatewayToken": gw_token or data.get("gatewayToken", ""),
+                "dashboardToken": data.get("dashboardToken", ""),
+                "proxyBase": "/api/v1/portal/gateway/ui/",
+            }
+        return {"available": False, "reason": f"Container returned {resp.status_code}: {resp.text[:200]}"}
+    except _requests.exceptions.ConnectionError:
+        return {"available": False, "reason": "Container not reachable"}
+    except _requests.exceptions.Timeout:
+        return {"available": False, "reason": "Container timed out"}
+    except Exception as e:
+        return {"available": False, "reason": str(e)}
+
+
 def _authenticate_proxy(request: Request, authorization: str) -> _UserInfo:
     """Authenticate for gateway proxy via: Authorization header, ?auth_token= query, or gw_session cookie.
     On success with auth_token query param, sets a session cookie so sub-resource requests work."""
