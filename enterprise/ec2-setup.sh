@@ -86,8 +86,7 @@ chown ubuntu:ubuntu /home/ubuntu/tenant_router.py /home/ubuntu/bedrock_proxy_h2.
 # OpenClaw workspace templates → /home/ubuntu/docs/
 # The Gateway Chat UI and `openclaw tui` need template files (AGENTS.md, TOOLS.md, etc.)
 # in $HOME/docs/reference/templates/. These ship inside the npm package.
-OPENCLAW_DOCS=$(ls -d /home/ubuntu/.nvm/versions/node/*/lib/node_modules/openclaw-agentcore/docs 2>/dev/null | head -1)
-[ -z "$OPENCLAW_DOCS" ] && OPENCLAW_DOCS=$(ls -d /home/ubuntu/.nvm/versions/node/*/lib/node_modules/openclaw/docs 2>/dev/null | head -1)
+OPENCLAW_DOCS=$(ls -d /home/ubuntu/.nvm/versions/node/*/lib/node_modules/openclaw/docs 2>/dev/null | head -1)
 if [ -n "$OPENCLAW_DOCS" ] && [ -d "$OPENCLAW_DOCS" ]; then
   cp -r "$OPENCLAW_DOCS" /home/ubuntu/docs
   chown -R ubuntu:ubuntu /home/ubuntu/docs

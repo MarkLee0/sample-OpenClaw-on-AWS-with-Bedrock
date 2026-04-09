@@ -737,9 +737,9 @@ Resources:
           nvm use 22
           nvm alias default 22
           npm config set registry https://registry.npmjs.org/
-          npm install -g openclaw-agentcore@latest --timeout=300000 || {
+          npm install -g openclaw@2026.3.24 --timeout=300000 || {
             npm cache clean --force
-            npm install -g openclaw-agentcore@latest --timeout=300000
+            npm install -g openclaw@2026.3.24 --timeout=300000
           }
           if ! grep -q 'NVM_DIR' ~/.bashrc; then
               echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc
@@ -796,7 +796,7 @@ Resources:
               "controlUi": {
                 "enabled": true,
                 "allowInsecureAuth": true,
-                "root": "/home/ubuntu/.nvm/versions/node/v22.22.0/lib/node_modules/openclaw-agentcore/dist/control-ui"
+                "root": "/home/ubuntu/.nvm/versions/node/v22.22.0/lib/node_modules/openclaw/dist/control-ui"
               },
               "auth": {
                 "mode": "token",
@@ -844,7 +844,7 @@ Resources:
           if [ -s "$NVM_DIR/nvm.sh" ]; then
             . "$NVM_DIR/nvm.sh"
             NODE_VERSION=$(node --version | cut -d v -f 2)
-            UI_ROOT_PATH="/home/ubuntu/.nvm/versions/node/v$NODE_VERSION/lib/node_modules/openclaw-agentcore/dist/control-ui"
+            UI_ROOT_PATH="/home/ubuntu/.nvm/versions/node/v$NODE_VERSION/lib/node_modules/openclaw/dist/control-ui"
             python3 -c "import json; c=json.load(open('/home/ubuntu/.openclaw/openclaw.json')); c['gateway']['controlUi']['root']='$UI_ROOT_PATH'; json.dump(c,open('/home/ubuntu/.openclaw/openclaw.json','w'),indent=2)"
           fi
 
