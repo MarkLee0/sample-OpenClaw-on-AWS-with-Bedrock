@@ -1,7 +1,7 @@
 """Seed S3 with sample workspace files for key employees."""
 import boto3, os
 
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 def get_bucket():
     account = boto3.client("sts", region_name=AWS_REGION).get_caller_identity()["Account"]

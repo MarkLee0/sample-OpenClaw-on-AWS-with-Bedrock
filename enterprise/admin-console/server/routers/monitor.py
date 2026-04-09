@@ -47,24 +47,18 @@ _SERVER_START_TIME = time.time()
 # Monitor — CloudWatch Logs backed, with DynamoDB fallback
 # =========================================================================
 
-# Log groups to query (AgentCore runtime + custom agent logs)
-_LOG_GROUPS = [
-    "/aws/bedrock-agentcore/runtimes/openclaw_multitenancy_runtime-olT3WX54rJ-DEFAULT",
-    "/aws/bedrock-agentcore/runtimes/openclaw_multitenancy_exec_runtime-OkWZBw3ybK-DEFAULT",
-    "/openclaw/openclaw/agents",
-]
-
 def _get_all_agentcore_log_groups() -> list:
     """Dynamically discover all AgentCore runtime log groups.
     Caches for 5 minutes so new runtimes are picked up automatically."""
+    stack = os.environ.get("STACK_NAME", "openclaw")
     try:
         cw = boto3.client("logs", region_name=GATEWAY_REGION)
         resp = cw.describe_log_groups(logGroupNamePrefix="/aws/bedrock-agentcore/runtimes/")
         groups = [g["logGroupName"] for g in resp.get("logGroups", [])]
-        extra = ["/openclaw/openclaw/agents"]
+        extra = [f"/openclaw/{stack}/agents"]
         return groups + [g for g in extra if g not in groups]
     except Exception:
-        return _LOG_GROUPS
+        return [f"/openclaw/{stack}/agents"]
 
 def _query_cloudwatch_sessions(region: str, minutes: int = 30) -> list:
     """Query CloudWatch Logs for recent agent invocations to derive active sessions."""
@@ -174,7 +168,7 @@ def get_sessions(source: str = "auto", authorization: str = Header(default="")):
         enriched.append(s)
 
     # 2. CloudWatch real sessions (last 2 hours)
-    cw_sessions = _query_cloudwatch_sessions("us-east-1", minutes=120)
+    cw_sessions = _query_cloudwatch_sessions(GATEWAY_REGION, minutes=120)
     if cw_sessions:
         existing_emps = {s.get("employeeId") for s in enriched}
         for cw in cw_sessions:
@@ -577,7 +571,7 @@ def _check_gateway_status() -> str:
 def _measure_bedrock_latency() -> int:
     """Measure round-trip latency to Bedrock by timing a lightweight ListFoundationModels call."""
     try:
-        AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
+        AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
         t0 = time.time()
         boto3.client("bedrock", region_name=AWS_REGION).list_foundation_models(maxResults=1)
         return int((time.time() - t0) * 1000)

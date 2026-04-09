@@ -41,25 +41,18 @@ def _get_current_user(authorization: str):
         return None
 
 
-# Hardcoded fallback log groups (used if dynamic discovery fails)
-_LOG_GROUPS = [
-    "/aws/bedrock-agentcore/runtimes/openclaw_multitenancy_runtime-olT3WX54rJ-DEFAULT",
-    "/aws/bedrock-agentcore/runtimes/openclaw_multitenancy_exec_runtime-OkWZBw3ybK-DEFAULT",
-    "/openclaw/openclaw-multitenancy/agents",
-]
-
-
 def _get_all_agentcore_log_groups() -> list:
     """Dynamically discover all AgentCore runtime log groups.
     Caches for 5 minutes so new runtimes are picked up automatically."""
+    stack = os.environ.get("STACK_NAME", "openclaw")
     try:
         cw = boto3.client("logs", region_name=GATEWAY_REGION)
         resp = cw.describe_log_groups(logGroupNamePrefix="/aws/bedrock-agentcore/runtimes/")
         groups = [g["logGroupName"] for g in resp.get("logGroups", [])]
-        extra = ["/openclaw/openclaw-multitenancy/agents"]
+        extra = [f"/openclaw/{stack}/agents"]
         return groups + [g for g in extra if g not in groups]
     except Exception:
-        return _LOG_GROUPS
+        return [f"/openclaw/{stack}/agents"]
 
 
 def _get_active_agent_ids() -> set:
@@ -162,7 +155,7 @@ def create_agent(body: dict):
 
     if emp_id and pos_id:
         # 1. Write SSM tenant->position and permissions for this employee
-        stack = os.environ.get("STACK_NAME", "openclaw-multitenancy")
+        stack = os.environ.get("STACK_NAME", "openclaw")
         region = os.environ.get("AWS_REGION", "us-east-1")
         pos_tools = {
             "pos-sa": ["web_search", "shell", "browser", "file", "file_write", "code_execution"],
@@ -469,7 +462,7 @@ def get_all_skill_keys():
 
     keys = []
     key_id = 0
-    stack = os.environ.get("STACK_NAME", "openclaw-multitenancy")
+    stack = os.environ.get("STACK_NAME", "openclaw")
 
     for name in sorted(skill_names):
         content = s3ops.read_file(f"_shared/skills/{name}/skill.json")

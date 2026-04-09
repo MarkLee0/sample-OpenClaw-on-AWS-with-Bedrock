@@ -36,7 +36,7 @@ def _get_current_user(authorization: str):
 
 
 def _mapping_prefix():
-    stack = os.environ.get("STACK_NAME", "openclaw-multitenancy")
+    stack = os.environ.get("STACK_NAME", "openclaw")
     return f"/openclaw/{stack}/user-mapping/"
 
 

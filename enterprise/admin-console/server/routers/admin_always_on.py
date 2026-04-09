@@ -110,9 +110,9 @@ def start_always_on_agent(agent_id: str, authorization: str = Header(default="")
     If the service already exists with desiredCount=0, scales it to 1.
     If no service exists, creates one. Also stops any legacy RunTask tasks."""
     require_role(authorization, roles=["admin"])
-    stack     = os.environ.get("STACK_NAME",      "openclaw-multitenancy")
+    stack     = os.environ.get("STACK_NAME",      "openclaw")
     bucket    = os.environ.get("S3_BUCKET",       f"openclaw-tenants-{GATEWAY_ACCOUNT_ID}")
-    ddb_table = os.environ.get("DYNAMODB_TABLE",  "openclaw-enterprise")
+    ddb_table = os.environ.get("DYNAMODB_TABLE",  "openclaw")
     ddb_region = os.environ.get("DYNAMODB_REGION", os.environ.get("AWS_REGION", "us-east-1"))
 
     agent = db.get_agent(agent_id)

@@ -17,7 +17,7 @@ Usage:
     --workspace /tmp/workspace \
     --bucket openclaw-tenants-xxx \
     --stack openclaw-prod \
-    --region us-east-2
+    --region us-east-1
 """
 
 import argparse
@@ -249,8 +249,8 @@ def assemble_workspace(
         try:
             import boto3 as _b3ch
             from boto3.dynamodb.conditions import Key as _KeyC
-            ddb_region = os.environ.get("DYNAMODB_REGION", "us-east-2")
-            ddb_table = os.environ.get("DYNAMODB_TABLE", "openclaw-enterprise")
+            ddb_region = os.environ.get("DYNAMODB_REGION", os.environ.get("AWS_REGION", "us-east-1"))
+            ddb_table = os.environ.get("DYNAMODB_TABLE", os.environ.get("STACK_NAME", "openclaw"))
             ddb = _b3ch.resource("dynamodb", region_name=ddb_region)
             table = ddb.Table(ddb_table)
             scan = table.query(
@@ -305,8 +305,8 @@ def assemble_workspace(
         _b_id = _parts_id[1]
     try:
         import boto3 as _b3id
-        ddb_region = os.environ.get("DYNAMODB_REGION", "us-east-2")
-        ddb_table = os.environ.get("DYNAMODB_TABLE", "openclaw-enterprise")
+        ddb_region = os.environ.get("DYNAMODB_REGION", os.environ.get("AWS_REGION", "us-east-1"))
+        ddb_table = os.environ.get("DYNAMODB_TABLE", os.environ.get("STACK_NAME", "openclaw"))
         ddb = _b3id.resource("dynamodb", region_name=ddb_region)
         table = ddb.Table(ddb_table)
         # Resolve emp_id from base_id (may already be emp-xxx after user-mapping earlier)

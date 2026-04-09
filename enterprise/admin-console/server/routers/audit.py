@@ -293,7 +293,7 @@ def request_always_on(body: dict, authorization: str = Header(default="")):
     reason = body.get("reason", "").strip() or "Employee-initiated request"
 
     # Check not already always-on
-    stack = os.environ.get("STACK_NAME", "openclaw-multitenancy")
+    stack = os.environ.get("STACK_NAME", "openclaw")
     try:
         ssm_chk = _boto3_audit.client("ssm", region_name=GATEWAY_REGION)
         ssm_chk.get_parameter(

@@ -2,7 +2,7 @@
 Seed DynamoDB with enterprise demo data.
 Single-table design: PK/SK pattern from PRD §15.
 
-Usage: python seed_dynamodb.py [--region us-east-2] [--table openclaw-enterprise]
+Usage: python seed_dynamodb.py [--region us-east-1] [--table openclaw]
 """
 import argparse
 import json

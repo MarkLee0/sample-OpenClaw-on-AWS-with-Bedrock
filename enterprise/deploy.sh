@@ -55,7 +55,7 @@ for arg in "$@"; do
 done
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
-STACK_NAME="${STACK_NAME:-openclaw-enterprise}"
+STACK_NAME="${STACK_NAME:-openclaw}"
 REGION="${REGION:-us-east-1}"
 MODEL="${MODEL:-global.amazon.nova-2-lite-v1:0}"
 INSTANCE_TYPE="${INSTANCE_TYPE:-c7g.large}"

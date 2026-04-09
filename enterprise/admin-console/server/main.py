@@ -8,8 +8,8 @@ Usage:
   cd admin-console/server && python main.py
 
 Env vars:
-  DYNAMODB_TABLE (default: openclaw-enterprise)
-  AWS_REGION     (default: us-east-2)
+  DYNAMODB_TABLE (default: STACK_NAME or openclaw)
+  AWS_REGION     (default: AWS_REGION)
   CONSOLE_PORT   (default: 8099)
 """
 

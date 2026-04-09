@@ -18,7 +18,7 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger(__name__)
 
 STACK_NAME = os.environ.get("STACK_NAME", "dev")
-DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", "openclaw-enterprise")
+DYNAMODB_TABLE = os.environ.get("DYNAMODB_TABLE", os.environ.get("STACK_NAME", "openclaw"))
 DYNAMODB_REGION = os.environ.get("DYNAMODB_REGION", os.environ.get("AWS_REGION", "us-east-1"))
 
 DEFAULT_PROFILE = {

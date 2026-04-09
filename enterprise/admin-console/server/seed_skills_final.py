@@ -1,7 +1,7 @@
 """Final authoritative skill catalog. Replaces all previous seed scripts."""
 import json, boto3, os
 
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 def get_bucket():
     bucket = os.environ.get("S3_BUCKET", "")
