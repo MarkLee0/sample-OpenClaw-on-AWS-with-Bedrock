@@ -300,219 +300,41 @@ const NAV = [
 // ═══ PAGE CONTENT ═══
 const PAGES = {
 arch: {
-  en: { title:'Architecture Overview', sub:'The multi-layer pipeline that routes every message to the right agent.' },
-  zh: { title:'架构总览', sub:'将每条消息路由到正确 Agent 的多层管道。' },
+  en: { title:'Architecture Overview', sub:'The 5-component pipeline that turns one shared bot into 500 personal AI agents.' },
+  zh: { title:'架构总览', sub:'将一个共享 bot 变成 500 个个人 AI Agent 的 5 组件管道。' },
   body() {
     return intent(
-      '<strong>Why this architecture?</strong> Enterprise AI agents face a fundamental tension: you want the <strong>cost efficiency</strong> of shared infrastructure (one EC2 for 1000 employees) but the <strong>security guarantee</strong> that Employee A\'s conversations, tools, and knowledge base are completely invisible to Employee B. Our solution: a shared gateway receives all messages, but each employee\'s AI processing happens inside an <strong>isolated Firecracker microVM</strong> — the same technology AWS Lambda uses. This means: (1) No data leakage between employees, even if an agent is compromised. (2) Per-employee tool permissions enforced at the VM level. (3) Cost proportional to actual usage, not headcount — with their own SOUL, memory, and permissions. Cost efficiency of shared infra, security of complete isolation.',
-      '<strong>为什么选择这种架构？</strong>企业 AI Agent 面临根本矛盾：您希望共享基础设施的<strong>成本效率</strong>（一台 EC2 服务 1000 名员工），但又需要<strong>安全保证</strong>——A 员工的对话、工具和知识库对 B 员工完全不可见。我们的方案：共享网关接收所有消息，但每个员工的 AI 处理发生在<strong>隔离的 Firecracker 微虚拟机</strong>中——与 AWS Lambda 相同的技术。(1) 员工间零数据泄露。(2) VM 级别工具权限强制执行。(3) 成本与实际使用成正比 — 拥有自己的 SOUL、记忆和权限。兼顾共享成本效率和完全隔离安全性。'
+      t(
+        '<strong>Why this architecture?</strong> Enterprise AI faces a fundamental tension: <strong>cost efficiency</strong> (one EC2 for 1000 employees) vs <strong>security isolation</strong> (Employee A\'s data invisible to Employee B). Our answer: a shared EC2 gateway receives all IM messages, but each employee\'s AI processing happens inside an <strong>isolated Firecracker microVM</strong> — the same technology powering AWS Lambda. Benefits: (1) <strong>Zero data leakage</strong> between employees. (2) <strong>Per-employee permissions</strong> enforced at VM level. (3) <strong>Cost proportional to usage</strong>, not headcount. (4) <strong>Instant scaling</strong> — AgentCore spins up VMs in ~6 seconds.',
+        '<strong>为什么选择这种架构？</strong>企业 AI 面临根本矛盾：<strong>成本效率</strong>（一台 EC2 服务 1000 员工）vs <strong>安全隔离</strong>（A 员工数据对 B 不可见）。我们的方案：共享 EC2 网关接收所有 IM 消息，每个员工的 AI 处理在<strong>隔离的 Firecracker 微虚拟机</strong>中进行——与 AWS Lambda 相同技术。优势：(1) 员工间<strong>零数据泄露</strong>。(2) VM 级别<strong>每员工权限</strong>。(3) <strong>成本与使用成正比</strong>。(4) <strong>即时扩展</strong>——约 6 秒启动。'
+      )
     )
-    + sectionHead(t('Complete Data Flow','完整数据流'))
-    + card(t('Message Journey: IM → AI Response','消息旅程：IM → AI 响应'),
-      flow(['IM Platform','','Gateway\n18789','p','H2 Proxy\n8091','c','Tenant Router\n8090','s','AgentCore VM','d','Bedrock',''])
-      + `<div class="sep"></div>`
-      + `<div class="grid2" style="font-size:11px;color:var(--text-s)">`
-      + `<div><strong style="color:var(--pl)">Gateway</strong> — ${t('Receives IM webhooks (Feishu, Telegram, Discord, Slack). Manages bot connections via WebSocket/polling.','接收 IM webhook（飞书、Telegram、Discord、Slack）。通过 WebSocket/轮询管理 bot 连接。')}</div>`
-      + `<div><strong style="color:var(--cyan)">H2 Proxy</strong> — ${t('Intercepts all Bedrock API calls from Gateway. Handles IM pairing (/start → BIND). Enforces employee binding check. Routes to Tenant Router.','拦截 Gateway 的所有 Bedrock API 调用。处理 IM 配对（/start → BIND）。强制员工绑定检查。路由到 Tenant Router。')}</div>`
-      + `<div><strong style="color:var(--success)">Tenant Router</strong> — ${t('Resolves IM user ID → employee → position → AgentCore Runtime. Derives stable tenant_id for session persistence. Manages routing config from DynamoDB.','解析 IM 用户 ID → 员工 → 岗位 → AgentCore 运行时。派生稳定的 tenant_id 用于会话持久化。从 DynamoDB 管理路由配置。')}</div>`
-      + `<div><strong style="color:var(--danger)">AgentCore</strong> — ${t('Isolated Firecracker microVM per employee. workspace_assembler merges 3-layer SOUL from S3/DynamoDB. Full OpenClaw instance with tools, skills, memory.','每员工独立 Firecracker 微虚拟机。workspace_assembler 从 S3/DynamoDB 合并三层 SOUL。完整 OpenClaw 实例，含工具、技能、记忆。')}</div>`
-      + `</div>`
+    + sectionHead(t('The 5-Component Pipeline','5 组件管道'))
+    + card(t('Message Flow: IM → AI Response','消息流：IM → AI 响应'),
+      flow(['IM Platform','','Gateway\n18789','p','H2 Proxy\n8091','c','Tenant Router\n8090','s','AgentCore\nFirecracker','d','Bedrock',''])
+      + '<div class="sep"></div>'
+      + '<div style="font-size:11.5px;color:var(--text-s);line-height:1.8">'
+      + t(
+        '<p><strong style="color:var(--pl)">① Gateway</strong> (port 18789) — Receives IM webhooks. Manages bot connections. Runs a local agent that calls Bedrock for every message.</p><p><strong style="color:var(--cyan)">② H2 Proxy</strong> (port 8091) — Intercepts ALL Bedrock calls. The "brain" of multi-tenancy: extracts sender identity, checks binding, handles pairing, routes to Tenant Router. Unbound users get rejection.</p><p><strong style="color:var(--success)">③ Tenant Router</strong> (port 8090) — Resolves: IM user → MAPPING# → employee → position → AgentCore Runtime. Creates stable tenant IDs for session persistence.</p><p><strong style="color:var(--danger)">④ AgentCore</strong> — Isolated Firecracker microVM per employee. Runs workspace_assembler (3-layer SOUL merge) + full OpenClaw agent CLI. Auto-terminates after idle timeout.</p><p><strong>⑤ Bedrock</strong> — LLM inference. Nova 2 Lite default ($0.30/1M), Claude Sonnet for executives, per-position configurable.</p>',
+        '<p><strong style="color:var(--pl)">① Gateway</strong>（端口 18789）— 接收 IM webhook。管理 bot 连接。运行本地 agent 调用 Bedrock。</p><p><strong style="color:var(--cyan)">② H2 Proxy</strong>（端口 8091）— 拦截所有 Bedrock 调用。多租户"大脑"：提取发送者身份，检查绑定，处理配对，路由到 Tenant Router。</p><p><strong style="color:var(--success)">③ Tenant Router</strong>（端口 8090）— 解析：IM 用户 → MAPPING# → 员工 → 岗位 → AgentCore Runtime。创建稳定 tenant ID。</p><p><strong style="color:var(--danger)">④ AgentCore</strong> — 每员工隔离 Firecracker VM。运行 workspace_assembler（三层 SOUL 合并）+ 完整 OpenClaw agent CLI。空闲后自动终止。</p><p><strong>⑤ Bedrock</strong> — LLM 推理。Nova 2 Lite 默认，Claude Sonnet 高管用，可按岗位配置。</p>'
+      )
+      + '</div>'
     )
-    + sectionHead(t('SOUL 3-Layer Identity Model','SOUL 三层身份模型'))
-    + flow(['🔒 Global\n'+t('Company rules','公司规则'),'d','✏️ Position\n'+t('Role expertise','角色专长'),'p','✏️ Personal\n'+t('Preferences','个人偏好'),'s','= Merged SOUL\n'+t('What agent reads','Agent 读取内容'),'c'])
-    + note('info','📊',t(
-      '<strong>Key principle:</strong> 1000 employees share one Feishu bot. Each message is routed to the correct employee\'s isolated AgentCore VM. The agent knows who it is, what tools it has, and what knowledge base to use — all assembled at session start.',
-      '<strong>核心原则：</strong>1000 名员工共享一个飞书 bot。每条消息路由到正确员工的隔离 AgentCore VM。Agent 知道自己是谁、有什么工具、用什么知识库 — 全部在会话开始时组装。'
-    ))
-    + sectionHead(t('Environment Variable Propagation','环境变量传播'))
-    + flow(['.env','','deploy.sh','p','/etc/openclaw/env','s','systemd services','c','AgentCore env','d'])
-    + note('tip','💡',t(
-      '<strong>All config is variable-driven.</strong> STACK_NAME, AWS_REGION, DYNAMODB_TABLE, S3_BUCKET flow from .env through every component. No hardcoded environment names — deploy to any account/region.',
-      '<strong>所有配置由变量驱动。</strong>STACK_NAME、AWS_REGION、DYNAMODB_TABLE、S3_BUCKET 从 .env 流经每个组件。无硬编码环境名 — 可部署到任何账号/区域。'
-    ))
+    + sectionHead(t('SOUL 3-Layer Identity','SOUL 三层身份'))
+    + flow(['🔒 Global\n'+t('Company rules','公司规则'),'d','✏️ Position\n'+t('Role expertise','角色专长'),'p','✏️ Personal\n'+t('Preferences','偏好'),'s','= Merged\n'+t('Agent reads','Agent 读取'),'c'])
     + sectionHead(t('Serverless vs Always-on','Serverless vs Always-on'))
-    + `<table class="tbl"><tr><th></th><th>${t('Serverless (Default)','Serverless（默认）')}</th><th>${t('Always-on (Fargate)','Always-on（Fargate）')}</th></tr>`
-    + `<tr><td>${t('Cold start','冷启动')}</td><td>~6s ${t('first message','首次消息')}</td><td>${t('None — instant','无 — 即时')}</td></tr>`
-    + `<tr><td>${t('Cost','成本')}</td><td>${t('Pay per session','按会话付费')}</td><td>${t('~$50/month per container','每容器约 $50/月')}</td></tr>`
-    + `<tr><td>${t('Memory','记忆')}</td><td>${t('S3 sync between sessions','会话间 S3 同步')}</td><td>${t('EFS persistent','EFS 持久化')}</td></tr>`
-    + `<tr><td>${t('Best for','适合')}</td><td>${t('Most employees','大部分员工')}</td><td>${t('Executives, scheduled tasks','高管、定时任务')}</td></tr></table>`;
+    + '<table class="tbl"><tr><th></th><th>Serverless</th><th>Always-on (Fargate)</th></tr>'
+    + '<tr><td>'+t('Cold start','冷启动')+'</td><td>~6s</td><td>'+t('None','无')+'</td></tr>'
+    + '<tr><td>'+t('Cost','成本')+'</td><td>'+t('Pay per session','按会话')+'</td><td>~$50/mo</td></tr>'
+    + '<tr><td>'+t('Memory','记忆')+'</td><td>'+t('S3 sync','S3 同步')+'</td><td>'+t('EFS persistent','EFS 持久')+'</td></tr>'
+    + '<tr><td>'+t('Best for','适合')+'</td><td>'+t('Most employees','大部分员工')+'</td><td>'+t('Executives, scheduled tasks','高管、定时任务')+'</td></tr></table>'
+    + deep(
+      '<h4>DynamoDB Single-Table Design</h4><p>All data in one table (name = STACK_NAME), PK = "ORG#acme":</p><div class="code">EMP#{emp_id}        — Employee (positionId, agentId, channels[])\nPOS#{pos_id}        — Position (toolAllowlist, defaultSkills)\nAGENT#{agent_id}    — Agent (status, deployMode, qualityScore)\nBIND#{bind_id}      — Employee↔Agent binding (mode: "1:1")\nMAPPING#{ch}__{uid} — IM user → employee mapping\nCONFIG#{key}        — Settings (model, security, kb-assignments)\nSESSION#{tenant}    — Active session (turns, soulHash)\nUSAGE#{emp}#{date}  — Daily usage (tokens, cost)\nAUDIT#{id}          — Events (invocations, guardrail blocks)</div><h4>Environment Variable Flow</h4><div class="code">.env → deploy.sh → /etc/openclaw/env → systemd services\n                → AgentCore Runtime env vars → container os.environ\n\nKey: STACK_NAME, AWS_REGION, DYNAMODB_TABLE, S3_BUCKET, BEDROCK_MODEL_ID</div><h4>⚠️ Self-Audit: Architecture Risks</h4><ul style="font-size:12px;color:var(--text-s);line-height:1.8"><li><strong>Gateway is unaware of multi-tenancy:</strong> H2 Proxy adds it via man-in-the-middle. OpenClaw version upgrades must be tested against H2 Proxy message extraction (extractUserMessage depends on Converse API body format).</li><li><strong>Single EC2 = single point of failure:</strong> All IM + Admin Console on one instance. Production should consider ALB + multi-AZ.</li><li><strong>5-min config propagation:</strong> Global/Position SOUL changes polled every 5 min. Serverless agents unaffected (fresh VM). Always-on containers cache longer.</li><li><strong>S3 bucket global uniqueness:</strong> Same account, two regions → name conflict. Must set WORKSPACE_BUCKET_NAME.</li><li><strong>Cross-region Bedrock inference:</strong> "global." prefix models may route to different regions — latency varies.</li></ul>',
+      '<h4>DynamoDB 单表设计</h4><p>所有数据在一个表中（名称 = STACK_NAME），PK = "ORG#acme"：</p><div class="code">EMP#{emp_id}        — 员工（positionId, agentId, channels[]）\nPOS#{pos_id}        — 岗位（toolAllowlist, defaultSkills）\nAGENT#{agent_id}    — Agent（状态、部署模式、质量分）\nBIND#{bind_id}      — 员工↔Agent 绑定\nMAPPING#{ch}__{uid} — IM 用户 → 员工映射\nCONFIG#{key}        — 设置（模型、安全、KB 分配）\nSESSION#{tenant}    — 活跃会话（轮次、soulHash）\nUSAGE#{emp}#{date}  — 每日用量（tokens、cost）\nAUDIT#{id}          — 事件（调用、护栏拦截）</div><h4>环境变量流</h4><div class="code">.env → deploy.sh → /etc/openclaw/env → systemd\n                → AgentCore Runtime env → 容器 os.environ</div><h4>⚠️ 自审：架构风险</h4><ul style="font-size:12px;color:var(--text-s);line-height:1.8"><li><strong>Gateway 不知道多租户：</strong>H2 Proxy 通过中间人添加。OpenClaw 版本升级须测试 H2 Proxy 消息提取。</li><li><strong>单 EC2 = 单点故障：</strong>所有 IM + Admin Console 在一个实例。生产应考虑 ALB + 多 AZ。</li><li><strong>5 分钟配置传播：</strong>Serverless 不受影响（新 VM）。Always-on 缓存更久。</li><li><strong>S3 桶名冲突：</strong>同账号多 region 需设 WORKSPACE_BUCKET_NAME。</li></ul>'
+    );
   }
 },
 
-deploy: {
-  en: { title:'Deploy with deploy.sh', sub:'One-command deployment — infrastructure, Docker, data, services.' },
-  zh: { title:'使用 deploy.sh 部署', sub:'一键部署 — 基础设施、Docker、数据、服务。' },
-  body() {
-    return intent(
-      '<strong>Why one-command deployment?</strong> Enterprise customers need repeatability and auditability. Every deployment must produce identical results whether run by a senior engineer or a junior ops person. <code>deploy.sh</code> encapsulates 8 complex AWS operations into a single idempotent script — CloudFormation for infrastructure, Docker for agent runtime, DynamoDB for org data, SSM for secrets. <strong>No manual steps, no room for human error, ~15 minutes end-to-end.</strong> Re-running is safe: it detects existing resources and updates only what changed.',
-      '<strong>为什么一键部署？</strong>企业客户需要可重复性和可审计性。每次部署必须产生相同结果，无论是高级工程师还是初级运维操作。<code>deploy.sh</code> 将 8 个复杂 AWS 操作封装为一个幂等脚本——CloudFormation 基础设施、Docker Agent 运行时、DynamoDB 组织数据、SSM 密钥。<strong>无手动步骤，无人为错误空间，端到端约 15 分钟。</strong>重复运行安全：检测已有资源，只更新变化的部分。'
-    )
-    + sectionHead(t('Prerequisites','前置条件'))
-    + `<table class="tbl"><tr><th>${t('Requirement','要求')}</th><th>${t('Check','检查')}</th><th>${t('Min Version','最低版本')}</th></tr>`
-    + `<tr><td>AWS CLI</td><td><code>aws --version</code></td><td>>= 2.27</td></tr>`
-    + `<tr><td>Python</td><td><code>python3 --version</code></td><td>>= 3.10</td></tr>`
-    + `<tr><td>SSM Plugin</td><td><code>session-manager-plugin</code></td><td>${t('Latest','最新')}</td></tr>`
-    + `<tr><td>AWS Credentials</td><td><code>aws sts get-caller-identity</code></td><td>${t('Must succeed','必须成功')}</td></tr></table>`
-    + sectionHead(t('Quick Start','快速开始'))
-    + `<div class="code">cd enterprise\ncp .env.example .env\n# ${t('Edit: STACK_NAME, REGION, ADMIN_PASSWORD','编辑：STACK_NAME, REGION, ADMIN_PASSWORD')}\nbash deploy.sh</div>`
-    + sectionHead(t('.env Configuration','.env 配置'))
-    + `<table class="tbl"><tr><th>${t('Variable','变量')}</th><th>${t('Required','必填')}</th><th>${t('Default','默认')}</th><th>${t('Notes','说明')}</th></tr>`
-    + `<tr><td><code>STACK_NAME</code></td><td>✅</td><td>openclaw</td><td>${t('Names all resources. Unique per account/region.','命名所有资源。每账号/区域唯一。')}</td></tr>`
-    + `<tr><td><code>REGION</code></td><td>✅</td><td>us-east-1</td><td>${t('Any region with Bedrock + AgentCore','任何有 Bedrock + AgentCore 的区域')}</td></tr>`
-    + `<tr><td><code>ADMIN_PASSWORD</code></td><td>✅</td><td>—</td><td>${t('Shared login password','共享登录密码')}</td></tr>`
-    + `<tr><td><code>MODEL</code></td><td></td><td>global.amazon.nova-2-lite-v1:0</td><td>${t('Bedrock model ID','Bedrock 模型 ID')}</td></tr>`
-    + `<tr><td><code>INSTANCE_TYPE</code></td><td></td><td>c7g.large</td><td>${t('Graviton ARM recommended','推荐 Graviton ARM')}</td></tr>`
-    + `<tr><td><code>WORKSPACE_BUCKET_NAME</code></td><td></td><td>${t('auto','自动')}</td><td>${t('Set if multi-stack same account','同账号多 stack 时设置')}</td></tr></table>`
-    + sectionHead(t('8 Automated Steps','8 个自动化步骤'))
-    + card(t('deploy.sh Execution Flow','deploy.sh 执行流程'),
-      [['1','Prerequisites','AWS CLI + model check','2s'],['2','CloudFormation','VPC, EC2, ECR, S3, IAM, ECS, EFS','8 min'],['3','Docker Build','Agent container on EC2 → ECR','10 min'],['4','AgentCore Runtime','Serverless runtime + env vars','30s'],['5','S3 Templates','SOUL, skills, knowledge docs','10s'],['6','DynamoDB Seed','20 employees, agents, bindings, roles, settings','15s'],['7','Secrets + Env','SSM + /etc/openclaw/env','10s'],['8','EC2 Services','Build frontend + systemd services','2 min']]
-      .map(([n,name,desc,time])=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px"><span style="background:var(--primary);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${n}</span><span style="font-weight:600;min-width:130px">${name}</span><span style="color:var(--text-m);flex:1">${desc}</span><span class="badge green">${time}</span></div>`).join('')
-    )
-    + sectionHead(t('Re-deploy Options','重新部署选项'))
-    + `<div class="code">bash deploy.sh --skip-build      # ${t('Skip Docker (use existing image)','跳过 Docker（用现有镜像）')}\nbash deploy.sh --skip-seed       # ${t('Skip DynamoDB seeding','跳过 DynamoDB 种子')}\nbash deploy.sh --skip-services   # ${t('Skip service deployment','跳过服务部署')}</div>`
-    + sectionHead(t('Post-Deployment Verification','部署后验证'))
-    + `<div class="code"># ${t('Check services','检查服务')}\nsystemctl is-active openclaw-admin tenant-router bedrock-proxy-h2\n\n# ${t('Check ports','检查端口')}\nss -tlnp | grep -E '8090|8091|8099|18789'\n\n# ${t('Check data','检查数据')}\ncurl -s http://localhost:8099/api/v1/org/employees | python3 -c "import json,sys; print(f'Employees: {len(json.load(sys.stdin))}')"</div>`;
-  }
-},
-
-login: {
-  en: { title:'Access the Admin Console', sub:'SSM port-forward → browser → sign in.' },
-  zh: { title:'登录管理控制台', sub:'SSM 端口转发 → 浏览器 → 登录。' },
-  body() {
-    return intent(
-      '<strong>Why no public URL?</strong> The Admin Console manages your entire AI workforce — agent identities, tool permissions, employee data. Exposing it to the internet would be a critical security risk. Instead, it runs behind AWS SSM Session Manager — a <strong>zero-trust access model</strong> where every connection requires IAM authentication. The Admin Console has <strong>no public URL</strong> — it runs behind AWS SSM Session Manager. SSM is a VPN tunnel that only authorized IAM users can open. Even if someone discovers the EC2 IP, they cannot access without IAM credentials. <strong>Zero-trust by design.</strong>',
-      '<strong>为什么没有公网 URL？</strong>管理控制台管理整个 AI 员工队伍——Agent 身份、工具权限、员工数据。暴露到互联网是关键安全风险。因此运行在 AWS SSM Session Manager 之后——<strong>零信任访问模型</strong>，每次连接都需要 IAM 认证。管理控制台<strong>没有公网 URL</strong> — 运行在 AWS SSM Session Manager 之后。SSM 是只有授权 IAM 用户才能打开的 VPN 隧道。即使发现 EC2 IP，没有 IAM 凭证也无法访问。<strong>零信任设计。</strong>'
-    )
-    + sectionHead(t('Connect','连接'))
-    + `<div class="code">aws ssm start-session --target &lt;INSTANCE_ID&gt; --region &lt;REGION&gt; \\\n  --document-name AWS-StartPortForwardingSession \\\n  --parameters 'portNumber=8099,localPortNumber=8099'</div>`
-    + note('ok','✅',t(
-      '<strong>Open http://localhost:8099</strong> → Login: <code>emp-jiade / &lt;ADMIN_PASSWORD&gt;</code><br>Roles: <strong>Admin</strong> (full access), <strong>Manager</strong> (org + agents), <strong>Employee</strong> (portal only)',
-      '<strong>打开 http://localhost:8099</strong> → 登录：<code>emp-jiade / &lt;ADMIN_PASSWORD&gt;</code><br>角色：<strong>Admin</strong>（完整访问）、<strong>Manager</strong>（组织+Agent）、<strong>Employee</strong>（仅门户）'
-    ));
-  }
-},
-
-dashboard: { en:{title:'Dashboard',sub:'Command center — setup checklist, stats, quick actions.'}, zh:{title:'仪表盘',sub:'指挥中心 — 配置清单、统计、快捷操作。'}, body(){ return intent('The dashboard gives first-time admins a <strong>clear roadmap</strong> via the setup checklist, and experienced admins a <strong>real-time pulse</strong> via stat cards. One screen to know if everything is OK.','仪表盘通过设置清单给首次管理员<strong>清晰路线图</strong>，通过统计卡片给有经验管理员<strong>实时脉搏</strong>。一个屏幕知道一切是否正常。') + note('info','📍',t('<strong>Navigate:</strong> Sidebar → Dashboard. Shows: setup progress, employee/agent/session counts, system health indicators.','<strong>导航：</strong>侧边栏 → Dashboard。显示：设置进度、员工/Agent/会话数、系统健康指标。'))
-    + deep(`
-<h4>deploy.sh Internal Architecture</h4>
-<p>File: <code>enterprise/deploy.sh</code> (~620 lines). Docker builds on EC2 (not locally) — source tarball → S3 → EC2 builds ARM image → ECR push. You don't need Docker installed.</p>
-<h4>CloudFormation Resources</h4>
-<div class="code">VPC + Subnet + IGW + Route Table
-EC2 (c7g.large Graviton, Ubuntu 24.04)
-ECR Repository | S3 Bucket | IAM Roles (EC2 + AgentCore)
-ECS Cluster + Task Def (Always-on) | EFS (persistent storage)
-Security Groups | DynamoDB permissions in AgentCore role</div>
-<h4>ec2-setup.sh Critical Step</h4>
-<p>Step 8 runs <code>ec2-setup.sh</code> on EC2 via SSM. It builds React frontend, installs systemd services, and injects <code>AWS_ENDPOINT_URL_BEDROCK_RUNTIME=http://localhost:8091</code> into Gateway service — this is what connects Gateway to H2 Proxy for multi-tenant routing.</p>
-<h4>Idempotency</h4>
-<p>Re-running is safe: detects existing stack → update. Docker uses --skip-build. DynamoDB uses put_item (upsert).</p>
-`,`
-<h4>deploy.sh 内部架构</h4>
-<p>文件：<code>enterprise/deploy.sh</code>（约 620 行）。Docker 在 EC2 上构建（非本地）——源码打包 → S3 → EC2 构建 ARM 镜像 → ECR 推送。无需本地安装 Docker。</p>
-<h4>CloudFormation 资源</h4>
-<div class="code">VPC + 子网 + IGW + 路由表
-EC2 (c7g.large Graviton, Ubuntu 24.04)
-ECR 仓库 | S3 桶 | IAM 角色 (EC2 + AgentCore)
-ECS 集群 + 任务定义 (Always-on) | EFS (持久存储)
-安全组 | AgentCore 角色的 DynamoDB 权限</div>
-<h4>ec2-setup.sh 关键步骤</h4>
-<p>步骤 8 通过 SSM 在 EC2 运行 <code>ec2-setup.sh</code>。构建 React 前端，安装 systemd 服务，注入 <code>AWS_ENDPOINT_URL_BEDROCK_RUNTIME=http://localhost:8091</code> 到 Gateway 服务——这是连接 Gateway 到 H2 Proxy 进行多租户路由的关键。</p>
-<h4>幂等性</h4>
-<p>重复运行安全：检测已有 stack → 更新。Docker 用 --skip-build。DynamoDB 用 put_item（upsert）。</p>
-`)
-    + deep(`
-<h4>DynamoDB Schema</h4>
-<div class="code">DEPT#{dept_id}  — id, name, parentId, headCount
-POS#{pos_id}   — id, name, departmentId, toolAllowlist, defaultSkills, memberCount
-EMP#{emp_id}   — id, name, positionId, departmentId, agentId, channels[], agentStatus</div>
-<h4>Auto-Provisioning Code Path</h4>
-<p>File: <code>enterprise/admin-console/server/routers/org.py</code> → <code>_auto_provision_employee()</code></p>
-<p>When an employee is created or assigned to a position: (1) Create AGENT# record in DynamoDB. (2) Create BIND# record (1:1, serverless). (3) Write SSM position parameter. (4) Create audit entry. Happens automatically — admin never manually creates agents.</p>
-<h4>Position → Agent Inheritance</h4>
-<p>Changing a position's SOUL/tools affects all agents in that role because agents don't store their own SOUL — they inherit it at runtime from S3 <code>_shared/soul/positions/{pos_id}/SOUL.md</code>. The workspace_assembler reads this fresh on every cold start.</p>
-`,`
-<h4>DynamoDB 表结构</h4>
-<div class="code">DEPT#{dept_id}  — id, name, parentId, headCount
-POS#{pos_id}   — id, name, departmentId, toolAllowlist, defaultSkills, memberCount
-EMP#{emp_id}   — id, name, positionId, departmentId, agentId, channels[], agentStatus</div>
-<h4>自动配置代码路径</h4>
-<p>文件：<code>enterprise/admin-console/server/routers/org.py</code> → <code>_auto_provision_employee()</code></p>
-<p>创建员工或分配岗位时：(1) 创建 AGENT# 记录。(2) 创建 BIND# 记录（1:1, serverless）。(3) 写入 SSM 位置参数。(4) 创建审计条目。全自动——管理员不手动创建 Agent。</p>
-<h4>岗位 → Agent 继承</h4>
-<p>修改岗位的 SOUL/工具影响该角色所有 Agent，因为 Agent 不存储自己的 SOUL——运行时从 S3 <code>_shared/soul/positions/{pos_id}/SOUL.md</code> 继承。workspace_assembler 在每次冷启动时重新读取。</p>
-`)
-    + deep(`
-<h4>Complete IM Message Flow</h4>
-<div class="code">1. Employee sends message in Feishu
-2. Gateway receives webhook → local agent processes → calls Bedrock API
-3. AWS SDK redirected to H2 Proxy (port 8091) via AWS_ENDPOINT_URL env
-4. H2 Proxy: extractUserMessage() extracts channel=feishu, userId=ou_xxx
-5. H2 Proxy: PATH C checks for /start TOKEN (pairing flow)
-6. H2 Proxy: checkImBinding() → GET /api/v1/internal/im-binding-check
-   → DynamoDB MAPPING#{feishu}__{ou_xxx} → employeeId
-7. H2 Proxy: forwardToTenantRouter() → POST /route
-8. Tenant Router: derive_tenant_id() → emp__emp-mike__hash
-9. Tenant Router: invoke_agent_runtime() → AgentCore VM
-10. AgentCore: workspace_assembler merges SOUL → openclaw agent CLI
-11. Response flows back through the chain</div>
-<h4>Pairing: PATH C in bedrock_proxy_h2.js</h4>
-<p>Step 1: <code>/start TOKEN</code> → H2 Proxy matches regex, calls <code>/api/v1/bindings/pair-pending</code> → stores in <code>pendingPairings</code> Map → injects "Reply BIND to confirm".</p>
-<p>Step 2: <code>BIND</code> → H2 Proxy matches <code>\bBIND\b</code> (word boundary, not ^$), calls <code>/api/v1/bindings/pair-complete</code> → writes DynamoDB <code>MAPPING#feishu__ou_xxx</code> → clears binding cache → injects "Connected!"</p>
-<h4>Binding Cache</h4>
-<p><code>_bindingCache</code> Map with 60s TTL. After pair-complete, cache is explicitly cleared so next message routes immediately.</p>
-<h4>⚠️ DM Policy Must Be "Open"</h4>
-<p>If Gateway DM policy is "Pairing", Gateway blocks unrecognized users BEFORE the message reaches H2 Proxy. H2 Proxy never sees the message → pairing flow never triggers → employees are stuck. "Open" mode lets all messages through to H2 Proxy, which then enforces binding check at a more intelligent level.</p>
-`,`
-<h4>完整 IM 消息流</h4>
-<div class="code">1. 员工在飞书发消息
-2. Gateway 接收 webhook → 本地 agent 处理 → 调用 Bedrock API
-3. AWS SDK 通过 AWS_ENDPOINT_URL 环境变量重定向到 H2 Proxy (8091)
-4. H2 Proxy: extractUserMessage() 提取 channel=feishu, userId=ou_xxx
-5. H2 Proxy: PATH C 检查 /start TOKEN（配对流程）
-6. H2 Proxy: checkImBinding() → GET /api/v1/internal/im-binding-check
-   → DynamoDB MAPPING#{feishu}__{ou_xxx} → employeeId
-7. H2 Proxy: forwardToTenantRouter() → POST /route
-8. Tenant Router: derive_tenant_id() → emp__emp-mike__hash
-9. Tenant Router: invoke_agent_runtime() → AgentCore VM
-10. AgentCore: workspace_assembler 合并 SOUL → openclaw agent CLI
-11. 响应原路返回</div>
-<h4>配对：bedrock_proxy_h2.js 的 PATH C</h4>
-<p>步骤 1：<code>/start TOKEN</code> → H2 Proxy 正则匹配，调用 <code>/api/v1/bindings/pair-pending</code> → 存入 <code>pendingPairings</code> Map → 注入"回复 BIND 确认"。</p>
-<p>步骤 2：<code>BIND</code> → H2 Proxy 匹配 <code>\bBIND\b</code>（单词边界，非 ^$），调用 <code>/api/v1/bindings/pair-complete</code> → 写入 DynamoDB <code>MAPPING#feishu__ou_xxx</code> → 清除绑定缓存 → 注入"Connected!"</p>
-<h4>绑定缓存</h4>
-<p><code>_bindingCache</code> Map，60 秒 TTL。pair-complete 后显式清除缓存，下条消息立即路由。</p>
-<h4>⚠️ DM 策略必须为 "Open"</h4>
-<p>如果 Gateway DM 策略是"Pairing"，Gateway 在消息到达 H2 Proxy 之前就阻止未识别用户。H2 Proxy 永远看不到消息 → 配对流程永远不触发 → 员工卡住。"Open"模式让所有消息通过到 H2 Proxy，由 H2 Proxy 在更智能的层级强制执行绑定检查。</p>
-`)
-    + deep(`
-<h4>Data Sources</h4>
-<p>Dashboard queries 11 API endpoints in parallel: departments, positions, employees, agents, sessions, audit entries, bindings, usage summary, usage trend, approvals, alert rules. All read from DynamoDB single-table (PK=ORG#acme).</p>
-<h4>Setup Checklist Logic</h4>
-<div class="code">setupDone = {
-  departments: count > 0,
-  positions: count > 0,
-  employees: count > 0,
-  agents: count > 0,
-  channels: configured_channels > 0
-}
-// Shows 5 steps; all must be > 0 to mark complete</div>
-<h4>Quality Score</h4>
-<p>Average of all agents' <code>qualityScore</code> field. Calculated from: satisfaction (turns-based), tool success rate, response time, compliance score, completion rate. Stored in AGENT# DynamoDB record.</p>
-`,`
-<h4>数据来源</h4>
-<p>仪表盘并行查询 11 个 API 端点：部门、岗位、员工、Agent、会话、审计条目、绑定、用量汇总、用量趋势、审批、告警规则。全部从 DynamoDB 单表读取（PK=ORG#acme）。</p>
-<h4>配置清单逻辑</h4>
-<div class="code">setupDone = {
-  departments: 数量 > 0,
-  positions: 数量 > 0,
-  employees: 数量 > 0,
-  agents: 数量 > 0,
-  channels: 已配置通道 > 0
-}
-// 5 步全部 > 0 才标记完成</div>
-<h4>质量分</h4>
-<p>所有 Agent 的 <code>qualityScore</code> 平均值。由满意度、工具成功率、响应时间、合规分、完成率计算。存储在 AGENT# DynamoDB 记录中。</p>
-`); }},
 
 org: { en:{title:'Organization Management',sub:'Departments → Positions → Employees — the foundation of agent governance.'}, zh:{title:'组织架构管理',sub:'部门 → 岗位 → 员工 — Agent 治理的基础。'}, body(){ return intent('The organization module has three layers mirroring your real company. <strong>Departments</strong> = isolation boundaries. <strong>Positions</strong> = Agent DNA (SOUL + skills + tools + permissions). <strong>Employees</strong> = auto-provisioned. Assign position → agent created with everything inherited. You manage <strong>10 positions instead of 500 agents</strong>.','组织模块有三层映射真实公司。<strong>部门</strong> = 隔离边界。<strong>岗位</strong> = Agent DNA（SOUL + 技能 + 工具 + 权限）。<strong>员工</strong> = 自动配置。分配岗位 → Agent 自动创建并继承一切。您管理<strong>10 个岗位而非 500 个 Agent</strong>。') + sectionHead(t('Departments','部门')) + note('info','📍',t('<strong>Organization → Departments.</strong> Hierarchy tree with headcount. Managers only see their department scope.','<strong>Organization → Departments。</strong>层级树含人数。经理只看到自己部门范围。')) + sectionHead(t('Positions — Agent DNA','岗位 — Agent DNA')) + steps(t('Operations:','操作：'),t(['Organization → Positions. Each shows member count + SOUL status.','Click position → SOUL tab → write role behavior.','Skills & Tools tab → assign tool permissions per role.','Positions with "Empty" SOUL need attention.'],['Organization → Positions。每个显示成员数 + SOUL 状态。','点击岗位 → SOUL 标签 → 编写角色行为。','Skills & Tools 标签 → 分配各角色工具权限。','标记"Empty"SOUL 的岗位需要配置。'])) + sectionHead(t('Employees — Auto-Provisioning','员工 — 自动配置')) + steps(t('Operations:','操作：'),t(['Organization → Employees. All with position, channels, agent status.','Add Employee → select position → auto-provisioned (Serverless).','Each gets 1:1 agent binding. Upgrade to Always-on later if needed.','Click employee → edit personal SOUL, view IM channels.'],['Organization → Employees。显示岗位、通道、Agent 状态。','添加员工 → 选择岗位 → 自动配置（Serverless）。','每个获得 1:1 Agent 绑定。需要时可升级为 Always-on。','点击员工 → 编辑个人 SOUL，查看 IM 通道。'])) + note('tip','💡',t('<strong>Value:</strong> 50 new hires → assign to position → 50 agents instantly with correct SOUL, skills, permissions. Zero manual config.','<strong>价值：</strong>50 名新员工 → 分配岗位 → 50 个 Agent 立即拥有正确的 SOUL、技能、权限。零手动配置。')); }},
 
