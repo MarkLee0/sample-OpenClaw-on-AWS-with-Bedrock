@@ -3,318 +3,493 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpenClaw Enterprise — Product Guide</title>
+<title>OpenClaw Enterprise — Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f1117;--surface:#1a1d27;--card:#222536;--border:#2d3148;--primary:#6366f1;--pl:#818cf8;--success:#10b981;--warn:#f59e0b;--danger:#ef4444;--cyan:#06b6d4;--text:#e2e8f0;--ts:#94a3b8;--tm:#64748b}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
-.ctr{max-width:1100px;margin:0 auto;padding:20px}
-.hdr{text-align:center;padding:40px 20px 24px;border-bottom:1px solid var(--border)}
-.hdr h1{font-size:26px;margin-bottom:6px}
-.hdr p{color:var(--ts);font-size:14px}
-.lt{display:flex;gap:4px;justify-content:center;margin-top:14px}
-.lb{padding:5px 16px;border-radius:20px;border:1px solid var(--border);background:0;color:var(--tm);cursor:pointer;font-size:13px;transition:.2s}
-.lb.a{background:var(--primary);color:#fff;border-color:var(--primary)}
-.rt{display:flex;gap:4px;justify-content:center;margin:20px 0;background:var(--surface);border-radius:10px;padding:4px;width:fit-content;margin-inline:auto}
-.rtb{padding:8px 24px;border-radius:8px;border:0;background:0;color:var(--tm);cursor:pointer;font-size:14px;font-weight:500;transition:.2s}
-.rtb.a{background:var(--primary);color:#fff}
-.pb{display:flex;gap:2px;margin:16px 0 24px;overflow-x:auto;padding:4px 0}
-.ps{flex:1;min-width:55px;text-align:center;padding:6px 2px;border-radius:8px;cursor:pointer;transition:.2s;border:1px solid transparent;font-size:9px}
-.ps:hover{background:var(--surface)}.ps.a{background:var(--primary);border-color:var(--primary);color:#fff}
-.ps.d{border-color:var(--success)}.ps .sn{display:block;font-size:9px;color:var(--tm)}.ps.a .sn,.ps.a .sl{color:#fff}
-.ps.d .sn{color:var(--success)}.sl{font-weight:500;font-size:9px}
-.sc{display:none}.sc.a{display:block}
-.sk{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px}
-.st{font-size:20px;font-weight:600;margin-bottom:4px}
-.sd{color:var(--ts);font-size:14px;margin-bottom:16px}
-.wb{border:1px solid rgba(245,158,11,.15);background:rgba(245,158,11,.04);border-radius:10px;margin:12px 0;overflow:hidden}
-.wh{display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--warn);user-select:none}
-.wh::after{content:'▾';margin-left:auto;transition:.2s;font-size:11px}
-.wb.c .wh::after{transform:rotate(-90deg)}
-.wc{padding:0 16px 14px;font-size:13px;color:var(--ts);line-height:1.7}
-.wb.c .wc{display:none}
-.mk{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:14px 0}
-.mh{background:var(--surface);padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
-.mb{padding:14px}
-.mi{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:12px;width:100%;display:block;margin-bottom:6px}
-.btn{display:inline-block;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:500;cursor:default}
-.btn.p{background:var(--primary);color:#fff}.btn.s{background:var(--success);color:#fff}
-.btn.g{background:0;border:1px solid var(--border);color:var(--ts)}
-.bg{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
-.bg.gn{background:rgba(16,185,129,.12);color:var(--success)}.bg.yl{background:rgba(245,158,11,.12);color:var(--warn)}
-.bg.bl{background:rgba(99,102,241,.12);color:var(--pl)}.bg.cy{background:rgba(6,182,212,.12);color:var(--cyan)}
-.mt{width:100%;border-collapse:collapse;font-size:11px}
-.mt th{text-align:left;padding:5px 8px;color:var(--tm);font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500}
-.mt td{padding:7px 8px;border-bottom:1px solid rgba(45,49,72,.4)}
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
-.ss{text-align:center;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
-.ss .v{font-size:20px;font-weight:700}.ss .l{font-size:9px;color:var(--tm);margin-top:2px}
-.an{display:flex;align-items:flex-start;gap:10px;border-radius:8px;padding:11px 14px;margin:10px 0;font-size:12px}
-.an.i{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15)}
-.an.s{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15)}
-.an.w{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15)}
-.an.c{background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.15)}
-.ai{font-size:15px;flex-shrink:0;margin-top:1px}.at{flex:1}.at strong{color:var(--text)}
-.ch{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:8px 0}
-.cn{padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;border:1px solid var(--border);background:var(--bg)}
-.cn.p{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:var(--pl)}
-.cn.s{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--success)}
-.cn.c{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.3);color:var(--cyan)}
-.ca{color:var(--tm);font-size:11px}
-.cb{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:'SF Mono',Monaco,monospace;font-size:11px;color:var(--ts);white-space:pre-wrap;margin:6px 0;overflow-x:auto}
-.nb{display:flex;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
-.nvb{padding:9px 22px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:13px;transition:.2s}
-.nvb:hover{border-color:var(--primary);color:var(--pl)}.nvb.p{background:var(--primary);border-color:var(--primary);color:#fff}
-.nvb:disabled{opacity:.35;cursor:not-allowed}
-.sep{border-top:1px solid var(--border);margin:12px 0}
+:root {
+  --bg: #08090d;
+  --surface: #111318;
+  --surface2: #181b23;
+  --card: #1c1f2a;
+  --border: #252838;
+  --border-l: #333750;
+  --primary: #7c6cff;
+  --primary-dim: rgba(124,108,255,.08);
+  --primary-glow: rgba(124,108,255,.15);
+  --pl: #a599ff;
+  --success: #34d399;
+  --success-dim: rgba(52,211,153,.08);
+  --warn: #fbbf24;
+  --warn-dim: rgba(251,191,36,.06);
+  --danger: #f87171;
+  --cyan: #22d3ee;
+  --cyan-dim: rgba(34,211,238,.08);
+  --text: #e8eaf0;
+  --text-s: #a0a6b8;
+  --text-m: #6b7280;
+  --rail-w: 76px;
+  --top-h: 52px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.65; overflow:hidden; height:100vh; }
+
+/* ═══ TOP BAR ═══ */
+.topbar {
+  position:fixed; top:0; left:0; right:0; height:var(--top-h); z-index:100;
+  background:rgba(8,9,13,.85); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 20px; gap:16px;
+}
+.topbar .logo { display:flex; align-items:center; gap:10px; width:var(--rail-w); justify-content:center; }
+.topbar .logo svg { width:28px; height:28px; }
+.topbar .logo-text { font-weight:700; font-size:14px; letter-spacing:-.3px; color:var(--pl); }
+.topbar .spacer { flex:1; }
+.lang-toggle { display:flex; gap:2px; background:var(--surface2); border-radius:8px; padding:2px; }
+.lang-btn { padding:4px 14px; border-radius:6px; border:none; background:none; color:var(--text-m); font-size:12px; font-family:inherit; cursor:pointer; transition:.2s; }
+.lang-btn.active { background:var(--primary); color:#fff; }
+
+/* ═══ NAVIGATION RAIL (M3 style) ═══ */
+.rail {
+  position:fixed; left:0; top:var(--top-h); bottom:0; width:var(--rail-w); z-index:90;
+  background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:8px 0; overflow-y:auto;
+  scrollbar-width:none;
+}
+.rail::-webkit-scrollbar { display:none; }
+.rail-group { padding:4px 0; }
+.rail-group + .rail-group { border-top:1px solid var(--border); margin-top:4px; }
+.rail-label { font-size:8px; text-transform:uppercase; letter-spacing:.8px; color:var(--text-m); text-align:center; padding:6px 4px 2px; font-weight:600; }
+.rail-item {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:8px 4px 6px; margin:1px 6px; border-radius:12px; cursor:pointer;
+  transition:all .2s; position:relative; text-decoration:none; color:var(--text-m);
+}
+.rail-item:hover { background:var(--primary-dim); color:var(--text-s); }
+.rail-item.active { background:var(--primary-glow); color:var(--pl); }
+.rail-item.active::before {
+  content:''; position:absolute; left:-6px; top:50%; transform:translateY(-50%);
+  width:3px; height:20px; background:var(--primary); border-radius:0 3px 3px 0;
+}
+.rail-icon { font-size:18px; line-height:1; }
+.rail-text { font-size:8.5px; font-weight:500; text-align:center; line-height:1.2; max-width:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* ═══ MAIN CONTENT ═══ */
+.main {
+  position:fixed; left:var(--rail-w); top:var(--top-h); right:0; bottom:0;
+  overflow-y:auto; padding:32px 40px 80px; scroll-behavior:smooth;
+}
+.main::-webkit-scrollbar { width:6px; }
+.main::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+.page { display:none; max-width:860px; animation:fadeIn .3s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+/* ═══ CONTENT ELEMENTS ═══ */
+.page-title { font-size:28px; font-weight:700; letter-spacing:-.5px; margin-bottom:4px; }
+.page-sub { font-size:14px; color:var(--text-s); margin-bottom:28px; }
+
+.section { margin-bottom:28px; }
+.section-head {
+  font-size:15px; font-weight:600; padding-left:12px; margin-bottom:12px;
+  border-left:3px solid var(--primary); color:var(--text);
+}
+
+/* Design Intent */
+.intent {
+  border:1px solid rgba(251,191,36,.12); background:var(--warn-dim);
+  border-radius:12px; margin:16px 0; overflow:hidden;
+}
+.intent-head {
+  display:flex; align-items:center; gap:8px; padding:12px 16px;
+  cursor:pointer; font-size:13px; font-weight:600; color:var(--warn); user-select:none;
+}
+.intent-head::after { content:'▾'; margin-left:auto; font-size:10px; transition:.2s; }
+.intent.closed .intent-head::after { transform:rotate(-90deg); }
+.intent-body { padding:0 16px 14px; font-size:13px; color:var(--text-s); line-height:1.75; }
+.intent.closed .intent-body { display:none; }
+
+/* Cards */
+.card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  overflow:hidden; margin:14px 0;
+}
+.card-head {
+  background:var(--surface2); padding:10px 16px; border-bottom:1px solid var(--border);
+  font-size:12px; font-weight:600; display:flex; align-items:center; gap:8px;
+}
+.card-body { padding:16px; }
+
+/* Annotations */
+.note {
+  display:flex; align-items:flex-start; gap:10px; border-radius:10px;
+  padding:12px 16px; margin:12px 0; font-size:12.5px; line-height:1.6;
+}
+.note.info { background:var(--primary-dim); border:1px solid rgba(124,108,255,.15); }
+.note.ok { background:var(--success-dim); border:1px solid rgba(52,211,153,.15); }
+.note.warn { background:var(--warn-dim); border:1px solid rgba(251,191,36,.15); }
+.note.tip { background:var(--cyan-dim); border:1px solid rgba(34,211,238,.15); }
+.note-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+.note-text { flex:1; }
+.note-text strong { color:var(--text); }
+
+/* Code */
+.code {
+  background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:12px 14px; font-family:'JetBrains Mono',monospace; font-size:11.5px;
+  color:var(--text-s); white-space:pre-wrap; margin:8px 0; overflow-x:auto; line-height:1.7;
+}
+
+/* Flow chain */
+.flow { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:10px 0; }
+.flow-node {
+  padding:6px 12px; border-radius:8px; font-size:11px; font-weight:600;
+  border:1px solid var(--border); background:var(--surface2); text-align:center;
+}
+.flow-node.p { background:var(--primary-dim); border-color:rgba(124,108,255,.3); color:var(--pl); }
+.flow-node.s { background:var(--success-dim); border-color:rgba(52,211,153,.3); color:var(--success); }
+.flow-node.c { background:var(--cyan-dim); border-color:rgba(34,211,238,.3); color:var(--cyan); }
+.flow-node.d { background:rgba(248,113,113,.06); border-color:rgba(248,113,113,.2); color:var(--danger); }
+.flow-arrow { color:var(--text-m); font-size:12px; }
+
+/* Steps */
+.steps { margin:12px 0; }
+.step-item {
+  display:flex; gap:10px; margin-bottom:8px; font-size:12.5px;
+}
+.step-num {
+  width:22px; height:22px; border-radius:50%; background:var(--primary);
+  color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; flex-shrink:0; margin-top:1px;
+}
+.step-text { color:var(--text-s); flex:1; }
+
+/* Tables */
+.tbl { width:100%; border-collapse:collapse; font-size:12px; margin:8px 0; }
+.tbl th { text-align:left; padding:8px 10px; color:var(--text-m); font-size:10px; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); font-weight:600; }
+.tbl td { padding:8px 10px; border-bottom:1px solid rgba(37,40,56,.6); }
+.tbl tr:nth-child(even) td { background:rgba(255,255,255,.01); }
+
+/* Badges */
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; }
+.badge.green { background:rgba(52,211,153,.12); color:var(--success); }
+.badge.yellow { background:rgba(251,191,36,.12); color:var(--warn); }
+.badge.blue { background:rgba(124,108,255,.12); color:var(--pl); }
+.badge.cyan { background:rgba(34,211,238,.12); color:var(--cyan); }
+
+/* Stats grid */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:12px 0; }
+.stat { text-align:center; padding:12px; background:var(--surface2); border-radius:10px; border:1px solid var(--border); }
+.stat-v { font-size:22px; font-weight:700; }
+.stat-l { font-size:9px; color:var(--text-m); margin-top:2px; }
+
+/* Separator */
+.sep { border-top:1px solid var(--border); margin:20px 0; }
+
+/* Grid helpers */
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 </style>
 </head>
 <body>
-<div class="hdr">
-  <h1 id="ht"></h1><p id="hp"></p>
-  <div class="lt"><button class="lb a" onclick="L('en')">English</button><button class="lb" onclick="L('zh')">中文</button></div>
-</div>
-<div class="ctr">
-  <div class="rt"><button class="rtb a" onclick="R('admin')" id="ra"></button><button class="rtb" onclick="R('emp')" id="re"></button></div>
-  <div class="pb" id="pb"></div>
-  <div id="sc"></div>
-  <div class="nb">
-    <button class="nvb" id="bp" onclick="P()">←</button>
-    <button class="nvb p" id="bn" onclick="N()">→</button>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="var(--primary)" stroke-width="2"/><path d="M10 16l4 4 8-8" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <span class="logo-text">OpenClaw Enterprise</span>
+  <div class="spacer"></div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
   </div>
 </div>
+
+<!-- NAVIGATION RAIL -->
+<nav class="rail" id="rail"></nav>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="main"></div>
+
 <script>
-let lang='en',role='admin',step=0;
-const T={en:{t:'OpenClaw Enterprise — Product Guide',d:'Complete feature documentation for IT Administrators and Employees',admin:'IT Admin (20 steps)',emp:'Employee (8 steps)',prev:'← Previous',next:'Next →'},
-zh:{t:'OpenClaw Enterprise — 产品功能指南',d:'面向 IT 管理员和员工的完整功能文档',admin:'IT 管理员 (20步)',emp:'员工 (8步)',prev:'← 上一步',next:'下一步 →'}};
+let lang = 'en';
+let activePage = 'arch';
 
-function wb(eW,cW,eC,cC){return `<div class="wb" onclick="this.classList.toggle('c')"><div class="wh">💡 ${lang==='en'?'Design Intent / 设计意图':'设计意图 / Design Intent'}</div><div class="wc">${lang==='en'?eC:cC}</div></div>`;}
-function an(icon,cls,e,c){return `<div class="an ${cls}"><span class="ai">${icon}</span><div class="at">${lang==='en'?e:c}</div></div>`;}
-function mk(hdr,body){return `<div class="mk"><div class="mh">${hdr}</div><div class="mb">${body}</div></div>`;}
-function op(title,steps){return `<div style="margin:10px 0"><div style="font-size:13px;font-weight:600;margin-bottom:8px">${title}</div>${steps.map((s,i)=>`<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12px"><span style="background:var(--primary);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${i+1}</span><span style="color:var(--ts)">${s}</span></div>`).join('')}</div>`;}
+// ═══ NAVIGATION STRUCTURE ═══
+const NAV = [
+  { group: { en: 'Start', zh: '开始' }, items: [
+    { id:'arch', icon:'🏗', en:'Architecture', zh:'架构' },
+    { id:'deploy', icon:'🚀', en:'Deploy', zh:'部署' },
+    { id:'login', icon:'🔑', en:'Login', zh:'登录' },
+  ]},
+  { group: { en: 'Admin', zh: '管理' }, items: [
+    { id:'dashboard', icon:'📊', en:'Dashboard', zh:'仪表盘' },
+    { id:'dept', icon:'🏢', en:'Departments', zh:'部门' },
+    { id:'pos', icon:'🧬', en:'Positions', zh:'岗位' },
+    { id:'emp', icon:'👥', en:'Employees', zh:'员工' },
+    { id:'soul', icon:'🧠', en:'SOUL Editor', zh:'SOUL' },
+    { id:'agents', icon:'🤖', en:'Agent Factory', zh:'Agent' },
+    { id:'skills', icon:'🧩', en:'Skills', zh:'技能' },
+    { id:'kb', icon:'📚', en:'Knowledge', zh:'知识库' },
+    { id:'im', icon:'💬', en:'IM Channels', zh:'IM 通道' },
+    { id:'sec', icon:'🛡', en:'Security', zh:'安全' },
+    { id:'monitor', icon:'📡', en:'Monitor', zh:'监控' },
+    { id:'audit', icon:'📋', en:'Audit', zh:'审计' },
+    { id:'usage', icon:'💰', en:'Usage', zh:'用量' },
+    { id:'playground', icon:'🎮', en:'Playground', zh:'测试' },
+    { id:'settings', icon:'⚙', en:'Settings', zh:'设置' },
+  ]},
+  { group: { en: 'Employee', zh: '员工' }, items: [
+    { id:'portal-chat', icon:'💭', en:'Chat', zh:'对话' },
+    { id:'portal-im', icon:'📱', en:'Connect IM', zh:'连接IM' },
+    { id:'portal-profile', icon:'👤', en:'Profile', zh:'档案' },
+    { id:'portal-skills', icon:'🔧', en:'My Skills', zh:'技能' },
+    { id:'portal-usage', icon:'📈', en:'My Usage', zh:'用量' },
+    { id:'portal-twin', icon:'👻', en:'Twin', zh:'分身' },
+  ]},
+  { group: { en: 'Reference', zh: '参考' }, items: [
+    { id:'troubleshoot', icon:'🔧', en:'Fix Issues', zh:'故障排除' },
+    { id:'costs', icon:'💵', en:'Costs', zh:'成本' },
+  ]},
+];
 
-const S={admin:[
-// ─── 1. Architecture ───
-{id:'arch',en:'Architecture Overview',zh:'架构总览',de:'The multi-layer pipeline from IM to AgentCore.',dz:'从 IM 到 AgentCore 的多层管道。',
-h(){return wb('','',
-'OpenClaw Enterprise uses a <strong>shared gateway + isolated microVM</strong> architecture. All employees share one EC2 instance for receiving messages, but each employee gets their own Firecracker microVM in AgentCore with their own SOUL, memory, and permissions. This gives you the cost efficiency of shared infrastructure with the security of complete isolation.',
-'OpenClaw 企业版采用<strong>共享网关 + 隔离微虚拟机</strong>架构。所有员工共享一个 EC2 实例接收消息，但每个员工在 AgentCore 中拥有自己的 Firecracker 微虚拟机，有自己的 SOUL、记忆和权限。兼顾共享基础设施的成本效率和完全隔离的安全性。'
-)+mk(lang==='en'?'Data Flow: Message → Response':'数据流：消息 → 响应',`<div class="ch" style="justify-content:center;flex-wrap:wrap"><span class="cn">IM Platform</span><span class="ca">→</span><span class="cn p">Gateway<br><small>18789</small></span><span class="ca">→</span><span class="cn c">H2 Proxy<br><small>8091</small></span><span class="ca">→</span><span class="cn s">Tenant Router<br><small>8090</small></span><span class="ca">→</span><span class="cn" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#f87171">AgentCore VM</span><span class="ca">→</span><span class="cn">Bedrock</span></div><div class="sep"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;color:var(--ts)"><div><strong style="color:var(--pl)">Gateway</strong> — ${lang==='en'?'Receives IM webhooks (Feishu, Telegram, Discord, Slack)':'接收 IM webhook（飞书、Telegram、Discord、Slack）'}</div><div><strong style="color:var(--cyan)">H2 Proxy</strong> — ${lang==='en'?'Intercepts Bedrock calls, handles pairing, enforces binding':'拦截 Bedrock 调用、处理配对、强制绑定检查'}</div><div><strong style="color:var(--success)">Tenant Router</strong> — ${lang==='en'?'Resolves IM user → employee → position → runtime':'解析 IM 用户 → 员工 → 岗位 → 运行时'}</div><div><strong style="color:#f87171">AgentCore</strong> — ${lang==='en'?'Isolated Firecracker VM per employee with full OpenClaw':'每员工独立 Firecracker VM，完整 OpenClaw 实例'}</div></div>`
-)+`<div style="margin:12px 0"><div style="font-size:13px;font-weight:600;margin-bottom:6px">${lang==='en'?'SOUL 3-Layer Model — Agent Identity Inheritance':'SOUL 三层模型 — Agent 身份继承'}</div><div class="ch"><span class="cn" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#f87171">🔒 Global</span><span class="ca">→</span><span class="cn p">✏️ Position</span><span class="ca">→</span><span class="cn s">✏️ Personal</span><span class="ca">=</span><span class="cn c">Merged SOUL</span></div><div style="font-size:10px;color:var(--tm)">${lang==='en'?'Global = company rules (locked by IT). Position = role expertise (managed by dept). Personal = preferences (editable by employee).':'全局 = 公司规则（IT 锁定）。岗位 = 角色专长（部门管理）。个人 = 偏好（员工可编辑）。'}</div></div>`
-+an('📊','i',lang==='en'?'<strong>Key principle:</strong> 1000 employees can share one Feishu bot. Each message is routed to the correct employee\'s isolated AgentCore VM. The agent knows who it is, what tools it has, and what knowledge base to use — all assembled from DynamoDB and S3 at session start.':'<strong>核心原则：</strong>1000 名员工可共享一个飞书 bot。每条消息路由到正确员工的隔离 AgentCore VM。Agent 知道自己是谁、有什么工具、用什么知识库 — 全部在会话开始时从 DynamoDB 和 S3 组装。','')}},
+// ═══ PAGE CONTENT ═══
+const PAGES = {
+arch: {
+  en: { title:'Architecture Overview', sub:'The multi-layer pipeline that routes every message to the right agent.' },
+  zh: { title:'架构总览', sub:'将每条消息路由到正确 Agent 的多层管道。' },
+  body() {
+    return intent(
+      'OpenClaw Enterprise uses a <strong>shared gateway + isolated microVM</strong> architecture. All employees share one EC2 instance for receiving messages, but each gets their own Firecracker microVM in AgentCore — with their own SOUL, memory, and permissions. Cost efficiency of shared infra, security of complete isolation.',
+      'OpenClaw 企业版采用<strong>共享网关 + 隔离微虚拟机</strong>架构。所有员工共享一个 EC2 实例接收消息，但每个人在 AgentCore 中拥有自己的 Firecracker 微虚拟机 — 拥有自己的 SOUL、记忆和权限。兼顾共享成本效率和完全隔离安全性。'
+    )
+    + sectionHead(t('Complete Data Flow','完整数据流'))
+    + card(t('Message Journey: IM → AI Response','消息旅程：IM → AI 响应'),
+      flow(['IM Platform','','Gateway\n18789','p','H2 Proxy\n8091','c','Tenant Router\n8090','s','AgentCore VM','d','Bedrock',''])
+      + `<div class="sep"></div>`
+      + `<div class="grid2" style="font-size:11px;color:var(--text-s)">`
+      + `<div><strong style="color:var(--pl)">Gateway</strong> — ${t('Receives IM webhooks (Feishu, Telegram, Discord, Slack). Manages bot connections via WebSocket/polling.','接收 IM webhook（飞书、Telegram、Discord、Slack）。通过 WebSocket/轮询管理 bot 连接。')}</div>`
+      + `<div><strong style="color:var(--cyan)">H2 Proxy</strong> — ${t('Intercepts all Bedrock API calls from Gateway. Handles IM pairing (/start → BIND). Enforces employee binding check. Routes to Tenant Router.','拦截 Gateway 的所有 Bedrock API 调用。处理 IM 配对（/start → BIND）。强制员工绑定检查。路由到 Tenant Router。')}</div>`
+      + `<div><strong style="color:var(--success)">Tenant Router</strong> — ${t('Resolves IM user ID → employee → position → AgentCore Runtime. Derives stable tenant_id for session persistence. Manages routing config from DynamoDB.','解析 IM 用户 ID → 员工 → 岗位 → AgentCore 运行时。派生稳定的 tenant_id 用于会话持久化。从 DynamoDB 管理路由配置。')}</div>`
+      + `<div><strong style="color:var(--danger)">AgentCore</strong> — ${t('Isolated Firecracker microVM per employee. workspace_assembler merges 3-layer SOUL from S3/DynamoDB. Full OpenClaw instance with tools, skills, memory.','每员工独立 Firecracker 微虚拟机。workspace_assembler 从 S3/DynamoDB 合并三层 SOUL。完整 OpenClaw 实例，含工具、技能、记忆。')}</div>`
+      + `</div>`
+    )
+    + sectionHead(t('SOUL 3-Layer Identity Model','SOUL 三层身份模型'))
+    + flow(['🔒 Global\n'+t('Company rules','公司规则'),'d','✏️ Position\n'+t('Role expertise','角色专长'),'p','✏️ Personal\n'+t('Preferences','个人偏好'),'s','= Merged SOUL\n'+t('What agent reads','Agent 读取内容'),'c'])
+    + note('info','📊',t(
+      '<strong>Key principle:</strong> 1000 employees share one Feishu bot. Each message is routed to the correct employee\'s isolated AgentCore VM. The agent knows who it is, what tools it has, and what knowledge base to use — all assembled at session start.',
+      '<strong>核心原则：</strong>1000 名员工共享一个飞书 bot。每条消息路由到正确员工的隔离 AgentCore VM。Agent 知道自己是谁、有什么工具、用什么知识库 — 全部在会话开始时组装。'
+    ))
+    + sectionHead(t('Environment Variable Propagation','环境变量传播'))
+    + flow(['.env','','deploy.sh','p','/etc/openclaw/env','s','systemd services','c','AgentCore env','d'])
+    + note('tip','💡',t(
+      '<strong>All config is variable-driven.</strong> STACK_NAME, AWS_REGION, DYNAMODB_TABLE, S3_BUCKET flow from .env through every component. No hardcoded environment names — deploy to any account/region.',
+      '<strong>所有配置由变量驱动。</strong>STACK_NAME、AWS_REGION、DYNAMODB_TABLE、S3_BUCKET 从 .env 流经每个组件。无硬编码环境名 — 可部署到任何账号/区域。'
+    ))
+    + sectionHead(t('Serverless vs Always-on','Serverless vs Always-on'))
+    + `<table class="tbl"><tr><th></th><th>${t('Serverless (Default)','Serverless（默认）')}</th><th>${t('Always-on (Fargate)','Always-on（Fargate）')}</th></tr>`
+    + `<tr><td>${t('Cold start','冷启动')}</td><td>~6s ${t('first message','首次消息')}</td><td>${t('None — instant','无 — 即时')}</td></tr>`
+    + `<tr><td>${t('Cost','成本')}</td><td>${t('Pay per session','按会话付费')}</td><td>${t('~$50/month per container','每容器约 $50/月')}</td></tr>`
+    + `<tr><td>${t('Memory','记忆')}</td><td>${t('S3 sync between sessions','会话间 S3 同步')}</td><td>${t('EFS persistent','EFS 持久化')}</td></tr>`
+    + `<tr><td>${t('Best for','适合')}</td><td>${t('Most employees','大部分员工')}</td><td>${t('Executives, scheduled tasks','高管、定时任务')}</td></tr></table>`;
+  }
+},
 
-// ─── 2. Deployment ───
-{id:'deploy',en:'Deploy with deploy.sh',zh:'使用 deploy.sh 部署',de:'One-command deployment: infrastructure, Docker, data, services.',dz:'一键部署：基础设施、Docker、数据、服务。',
-h(){return wb('','',
-'A single <code>bash deploy.sh</code> handles everything: CloudFormation infrastructure, Docker image build on EC2, AgentCore runtime creation, data seeding, and service installation. No manual steps. Takes ~15 minutes for a fresh deployment.',
-'一条 <code>bash deploy.sh</code> 搞定所有：CloudFormation 基础设施、EC2 上 Docker 镜像构建、AgentCore 运行时创建、数据种子和服务安装。无需手动步骤。全新部署约 15 分钟。'
-)+an('💻','c',lang==='en'?`<strong>Quick Start:</strong><div class="cb">cd enterprise\ncp .env.example .env\n# Edit: STACK_NAME, REGION, ADMIN_PASSWORD\nbash deploy.sh</div>`:`<strong>快速开始：</strong><div class="cb">cd enterprise\ncp .env.example .env\n# 编辑：STACK_NAME, REGION, ADMIN_PASSWORD\nbash deploy.sh</div>`,''
-)+mk(lang==='en'?'8 Automated Steps':'8 个自动化步骤',`<div style="display:flex;flex-direction:column;gap:3px">${[['1','Prerequisites','AWS CLI version check','2s'],['2','CloudFormation','VPC, EC2, ECR, S3, IAM, ECS, EFS','8 min'],['3','Docker Build','Agent container built on EC2, pushed to ECR','10 min'],['4','AgentCore Runtime','Serverless runtime with env vars','30s'],['5','S3 Templates','SOUL templates, skills, knowledge docs','10s'],['6','DynamoDB Seed','Employees, agents, bindings, settings, roles','15s'],['7','Secrets','SSM secrets + /etc/openclaw/env','10s'],['8','EC2 Services','Build frontend, install systemd services','2 min']].map(([n,name,desc,t])=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;background:var(--bg);font-size:11px"><span style="background:var(--primary);color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0">${n}</span><span style="font-weight:500;min-width:110px">${name}</span><span style="color:var(--tm);flex:1">${desc}</span><span style="color:var(--success);font-size:10px">${t}</span></div>`).join('')}</div>`
-)+an('⚠️','w',lang==='en'?'<strong>Required .env:</strong> <code>STACK_NAME</code> (unique per account/region), <code>REGION</code> (with Bedrock+AgentCore), <code>ADMIN_PASSWORD</code>. If deploying multiple stacks in same account, also set <code>WORKSPACE_BUCKET_NAME</code>.':'<strong>必填 .env：</strong><code>STACK_NAME</code>（每账号/区域唯一）、<code>REGION</code>（需有 Bedrock+AgentCore）、<code>ADMIN_PASSWORD</code>。同账号多 stack 时需设 <code>WORKSPACE_BUCKET_NAME</code>。','')}},
+deploy: {
+  en: { title:'Deploy with deploy.sh', sub:'One-command deployment — infrastructure, Docker, data, services.' },
+  zh: { title:'使用 deploy.sh 部署', sub:'一键部署 — 基础设施、Docker、数据、服务。' },
+  body() {
+    return intent(
+      'A single <code>bash deploy.sh</code> handles everything: CloudFormation infrastructure, Docker image build on EC2, AgentCore runtime creation, data seeding, and service installation. <strong>No manual steps. ~15 minutes for a fresh deployment.</strong>',
+      '一条 <code>bash deploy.sh</code> 搞定所有：CloudFormation 基础设施、EC2 上 Docker 镜像构建、AgentCore 运行时创建、数据种子和服务安装。<strong>无需手动步骤。全新部署约 15 分钟。</strong>'
+    )
+    + sectionHead(t('Prerequisites','前置条件'))
+    + `<table class="tbl"><tr><th>${t('Requirement','要求')}</th><th>${t('Check','检查')}</th><th>${t('Min Version','最低版本')}</th></tr>`
+    + `<tr><td>AWS CLI</td><td><code>aws --version</code></td><td>>= 2.27</td></tr>`
+    + `<tr><td>Python</td><td><code>python3 --version</code></td><td>>= 3.10</td></tr>`
+    + `<tr><td>SSM Plugin</td><td><code>session-manager-plugin</code></td><td>${t('Latest','最新')}</td></tr>`
+    + `<tr><td>AWS Credentials</td><td><code>aws sts get-caller-identity</code></td><td>${t('Must succeed','必须成功')}</td></tr></table>`
+    + sectionHead(t('Quick Start','快速开始'))
+    + `<div class="code">cd enterprise\ncp .env.example .env\n# ${t('Edit: STACK_NAME, REGION, ADMIN_PASSWORD','编辑：STACK_NAME, REGION, ADMIN_PASSWORD')}\nbash deploy.sh</div>`
+    + sectionHead(t('.env Configuration','.env 配置'))
+    + `<table class="tbl"><tr><th>${t('Variable','变量')}</th><th>${t('Required','必填')}</th><th>${t('Default','默认')}</th><th>${t('Notes','说明')}</th></tr>`
+    + `<tr><td><code>STACK_NAME</code></td><td>✅</td><td>openclaw</td><td>${t('Names all resources. Unique per account/region.','命名所有资源。每账号/区域唯一。')}</td></tr>`
+    + `<tr><td><code>REGION</code></td><td>✅</td><td>us-east-1</td><td>${t('Any region with Bedrock + AgentCore','任何有 Bedrock + AgentCore 的区域')}</td></tr>`
+    + `<tr><td><code>ADMIN_PASSWORD</code></td><td>✅</td><td>—</td><td>${t('Shared login password','共享登录密码')}</td></tr>`
+    + `<tr><td><code>MODEL</code></td><td></td><td>global.amazon.nova-2-lite-v1:0</td><td>${t('Bedrock model ID','Bedrock 模型 ID')}</td></tr>`
+    + `<tr><td><code>INSTANCE_TYPE</code></td><td></td><td>c7g.large</td><td>${t('Graviton ARM recommended','推荐 Graviton ARM')}</td></tr>`
+    + `<tr><td><code>WORKSPACE_BUCKET_NAME</code></td><td></td><td>${t('auto','自动')}</td><td>${t('Set if multi-stack same account','同账号多 stack 时设置')}</td></tr></table>`
+    + sectionHead(t('8 Automated Steps','8 个自动化步骤'))
+    + card(t('deploy.sh Execution Flow','deploy.sh 执行流程'),
+      [['1','Prerequisites','AWS CLI + model check','2s'],['2','CloudFormation','VPC, EC2, ECR, S3, IAM, ECS, EFS','8 min'],['3','Docker Build','Agent container on EC2 → ECR','10 min'],['4','AgentCore Runtime','Serverless runtime + env vars','30s'],['5','S3 Templates','SOUL, skills, knowledge docs','10s'],['6','DynamoDB Seed','20 employees, agents, bindings, roles, settings','15s'],['7','Secrets + Env','SSM + /etc/openclaw/env','10s'],['8','EC2 Services','Build frontend + systemd services','2 min']]
+      .map(([n,name,desc,time])=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12px"><span style="background:var(--primary);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${n}</span><span style="font-weight:600;min-width:130px">${name}</span><span style="color:var(--text-m);flex:1">${desc}</span><span class="badge green">${time}</span></div>`).join('')
+    )
+    + sectionHead(t('Re-deploy Options','重新部署选项'))
+    + `<div class="code">bash deploy.sh --skip-build      # ${t('Skip Docker (use existing image)','跳过 Docker（用现有镜像）')}\nbash deploy.sh --skip-seed       # ${t('Skip DynamoDB seeding','跳过 DynamoDB 种子')}\nbash deploy.sh --skip-services   # ${t('Skip service deployment','跳过服务部署')}</div>`
+    + sectionHead(t('Post-Deployment Verification','部署后验证'))
+    + `<div class="code"># ${t('Check services','检查服务')}\nsystemctl is-active openclaw-admin tenant-router bedrock-proxy-h2\n\n# ${t('Check ports','检查端口')}\nss -tlnp | grep -E '8090|8091|8099|18789'\n\n# ${t('Check data','检查数据')}\ncurl -s http://localhost:8099/api/v1/org/employees | python3 -c "import json,sys; print(f'Employees: {len(json.load(sys.stdin))}')"</div>`;
+  }
+},
 
-// ─── 3. Login ───
-{id:'login',en:'Access the Admin Console',zh:'登录管理控制台',de:'SSM port-forward → browser → sign in.',dz:'SSM 端口转发 → 浏览器 → 登录。',
-h(){return wb('','',
-'The Admin Console has <strong>no public URL</strong> — it runs behind AWS SSM Session Manager. Think of SSM as a VPN tunnel that only authorized IAM users can open. Even if someone discovers the EC2 IP, they cannot access the console without IAM credentials. This is zero-trust by design.',
-'管理控制台<strong>没有公网 URL</strong> — 运行在 AWS SSM Session Manager 之后。可以把 SSM 理解为只有授权 IAM 用户才能打开的 VPN 隧道。即使有人发现 EC2 IP，没有 IAM 凭证也无法访问。这是零信任设计。'
-)+an('💻','c',lang==='en'?`<strong>Connect:</strong><div class="cb">aws ssm start-session --target &lt;INSTANCE_ID&gt; --region &lt;REGION&gt; \\\n  --document-name AWS-StartPortForwardingSession \\\n  --parameters 'portNumber=8099,localPortNumber=8099'</div>Then open <strong>http://localhost:8099</strong> → Login with <code>emp-jiade / &lt;ADMIN_PASSWORD&gt;</code>`:`<strong>连接：</strong><div class="cb">aws ssm start-session --target &lt;INSTANCE_ID&gt; --region &lt;REGION&gt; \\\n  --document-name AWS-StartPortForwardingSession \\\n  --parameters 'portNumber=8099,localPortNumber=8099'</div>打开 <strong>http://localhost:8099</strong> → 使用 <code>emp-jiade / &lt;ADMIN_PASSWORD&gt;</code> 登录`,''
-)+an('✅','s',lang==='en'?'<strong>Roles:</strong> Admin (full access), Manager (org + agents), Employee (portal only). The login page shows demo accounts for quick testing.':'<strong>角色：</strong>Admin（完整访问）、Manager（组织+Agent）、Employee（仅门户）。登录页显示演示账号用于快速测试。','')}},
+login: {
+  en: { title:'Access the Admin Console', sub:'SSM port-forward → browser → sign in.' },
+  zh: { title:'登录管理控制台', sub:'SSM 端口转发 → 浏览器 → 登录。' },
+  body() {
+    return intent(
+      'The Admin Console has <strong>no public URL</strong> — it runs behind AWS SSM Session Manager. SSM is a VPN tunnel that only authorized IAM users can open. Even if someone discovers the EC2 IP, they cannot access without IAM credentials. <strong>Zero-trust by design.</strong>',
+      '管理控制台<strong>没有公网 URL</strong> — 运行在 AWS SSM Session Manager 之后。SSM 是只有授权 IAM 用户才能打开的 VPN 隧道。即使发现 EC2 IP，没有 IAM 凭证也无法访问。<strong>零信任设计。</strong>'
+    )
+    + sectionHead(t('Connect','连接'))
+    + `<div class="code">aws ssm start-session --target &lt;INSTANCE_ID&gt; --region &lt;REGION&gt; \\\n  --document-name AWS-StartPortForwardingSession \\\n  --parameters 'portNumber=8099,localPortNumber=8099'</div>`
+    + note('ok','✅',t(
+      '<strong>Open http://localhost:8099</strong> → Login: <code>emp-jiade / &lt;ADMIN_PASSWORD&gt;</code><br>Roles: <strong>Admin</strong> (full access), <strong>Manager</strong> (org + agents), <strong>Employee</strong> (portal only)',
+      '<strong>打开 http://localhost:8099</strong> → 登录：<code>emp-jiade / &lt;ADMIN_PASSWORD&gt;</code><br>角色：<strong>Admin</strong>（完整访问）、<strong>Manager</strong>（组织+Agent）、<strong>Employee</strong>（仅门户）'
+    ));
+  }
+},
 
-// ─── 4. Dashboard ───
-{id:'dash',en:'Dashboard',zh:'仪表盘',de:'Setup checklist, stats, and quick actions.',dz:'配置清单、统计和快捷操作。',
-h(){return wb('','',
-'The dashboard is your <strong>command center</strong>. A setup checklist appears automatically when steps are incomplete, giving first-time admins a clear roadmap. Stat cards show real-time platform health. The goal: <strong>one screen to know if everything is OK</strong>.',
-'仪表盘是您的<strong>指挥中心</strong>。设置清单在步骤未完成时自动显示，为首次管理员提供清晰路线图。统计卡片实时显示平台状态。目标：<strong>一个屏幕知道一切是否正常</strong>。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Sidebar → Dashboard (first item). Shows: setup progress, employee count, active agents, quality score, system health.':'<strong>导航：</strong>侧边栏 → Dashboard（第一项）。显示：设置进度、员工数、活跃 Agent、质量分、系统状态。','')}},
+dashboard: { en:{title:'Dashboard',sub:'Command center — setup checklist, stats, quick actions.'}, zh:{title:'仪表盘',sub:'指挥中心 — 配置清单、统计、快捷操作。'}, body(){ return intent('The dashboard gives first-time admins a <strong>clear roadmap</strong> via the setup checklist, and experienced admins a <strong>real-time pulse</strong> via stat cards. One screen to know if everything is OK.','仪表盘通过设置清单给首次管理员<strong>清晰路线图</strong>，通过统计卡片给有经验管理员<strong>实时脉搏</strong>。一个屏幕知道一切是否正常。') + note('info','📍',t('<strong>Navigate:</strong> Sidebar → Dashboard. Shows: setup progress, employee/agent/session counts, system health indicators.','<strong>导航：</strong>侧边栏 → Dashboard。显示：设置进度、员工/Agent/会话数、系统健康指标。')); }},
 
-// ─── 5. Departments ───
-{id:'dept',en:'Department Structure',zh:'部门管理',de:'Create org hierarchy — the isolation boundary.',dz:'创建组织层级 — 隔离边界。',
-h(){return wb('','',
-'Departments are the <strong>top-level isolation boundary</strong>. Like physical office floors, they separate teams so a Sales agent cannot access Engineering knowledge bases. Managers only see agents within their department scope. Without departments, all agents share one flat pool with no governance.',
-'部门是<strong>顶层隔离边界</strong>。就像大楼楼层，部门将团队分开：销售 Agent 无法访问工程知识库。经理只看到其管辖范围的 Agent。没有部门，所有 Agent 在一个无治理的平面池中。'
-)+op(lang==='en'?'How to manage departments:':'如何管理部门：',lang==='en'?['Navigate to Organization → Department Tree','Click "Add Department" to create new ones. Set parent for sub-departments.','Drag to reorder. Each department shows headcount and active agents.','Departments cascade: deleting a parent moves children to root level.']:['导航到 Organization → Department Tree','点击"添加部门"创建。设置上级部门用于子部门。','拖拽排序。每个部门显示人数和活跃 Agent。','级联：删除上级部门会将子部门移到根级别。'])}},
+dept: { en:{title:'Department Structure',sub:'Org hierarchy — the isolation boundary.'}, zh:{title:'部门管理',sub:'组织层级 — 隔离边界。'}, body(){ return intent('Departments are the <strong>top-level isolation boundary</strong>. Like physical office floors, they separate teams so a Sales agent cannot access Engineering knowledge bases. Managers only see agents within their scope.','部门是<strong>顶层隔离边界</strong>。就像大楼楼层，部门将团队分开：销售 Agent 无法访问工程知识库。经理只看到其管辖范围的 Agent。') + steps(t('How to manage:','如何管理：'),t(['Organization → Department Tree','Click "Add Department". Set parent for sub-departments.','Drag to reorder. Each shows headcount and active agents.','Cascading: deleting a parent moves children to root.'],['Organization → Department Tree','点击"添加部门"。设置上级部门创建子部门。','拖拽排序。每个显示人数和活跃 Agent。','级联：删除上级会将子部门移到根级别。'])); }},
 
-// ─── 6. Positions ───
-{id:'pos',en:'Positions — Agent DNA',zh:'岗位管理 — Agent 的 DNA',de:'Positions define SOUL, skills, tools, and permissions per role.',dz:'岗位定义每个角色的 SOUL、技能、工具和权限。',
-h(){return wb('','',
-'A Position is a <strong>job description for AI agents</strong>. It defines the SOUL template (personality + rules), default skills, knowledge bases, and tool permissions. Assign an employee to a position → their agent inherits everything. <strong>Change the position once → every agent in that role updates.</strong> This is the difference between managing 5 agents and managing 500.',
-'岗位是 <strong>AI Agent 的岗位说明书</strong>。定义 SOUL 模板（个性 + 规则）、默认技能、知识库和工具权限。将员工分配到岗位 → Agent 自动继承所有配置。<strong>修改一次岗位 → 该角色下每个 Agent 都更新。</strong>这就是管理 5 个和 500 个 Agent 的区别。'
-)+op(lang==='en'?'Key operations:':'关键操作：',lang==='en'?['Organization → Positions. Each position shows member count and SOUL status.','Click a position → SOUL tab → write role-specific behavior (e.g. "You are a Solutions Architect at ACME Corp").','Skills & Tools tab → assign which tools this role can use (shell, browser, file, etc.).','Positions with "Empty" SOUL badge need attention — agents won\'t know their professional identity.']:['Organization → Positions。每个岗位显示成员数和 SOUL 状态。','点击岗位 → SOUL 标签 → 编写角色行为（如"你是 ACME 的解决方案架构师"）。','Skills & Tools 标签 → 分配工具权限（shell、browser、file 等）。','标记为 "Empty" SOUL 的岗位需要配置 — Agent 不知道自己的职业身份。'])}},
+pos: { en:{title:'Positions — Agent DNA',sub:'SOUL template + skills + tools + permissions per role.'}, zh:{title:'岗位管理 — Agent 的 DNA',sub:'每个角色的 SOUL 模板 + 技能 + 工具 + 权限。'}, body(){ return intent('A Position is a <strong>job description for AI agents</strong>. SOUL template, default skills, knowledge bases, tool permissions — all inherited when you assign an employee. <strong>Change position once → every agent in that role updates.</strong> Managing 5 agents vs 500.','岗位是 <strong>AI Agent 的岗位说明书</strong>。SOUL 模板、默认技能、知识库、工具权限 — 分配员工时全部继承。<strong>修改一次岗位 → 该角色所有 Agent 更新。</strong>管理 5 个和 500 个的区别。') + steps(t('Operations:','操作：'),t(['Organization → Positions. Each shows member count + SOUL status.','Click position → SOUL tab → write role behavior.','Skills & Tools tab → assign tool permissions (shell, browser, file).','Positions with "Empty" SOUL need attention.'],['Organization → Positions。每个显示成员数 + SOUL 状态。','点击岗位 → SOUL 标签 → 编写角色行为。','Skills & Tools 标签 → 分配工具权限（shell、browser、file）。','标记"Empty"SOUL 的岗位需要配置。'])); }},
 
-// ─── 7. Employees ───
-{id:'emp',en:'Employee Management',zh:'员工管理',de:'Assign employees → agents auto-provisioned.',dz:'分配员工 → Agent 自动配置。',
-h(){return wb('','',
-'Each employee maps 1:1 to an agent. <strong>Auto-provisioning</strong> means you never manually configure individual agents — assign the employee to the right position, and the platform creates their agent, binding, and workspace automatically. Like onboarding a new hire: give them a role → they get laptop, access badge, and training materials.',
-'每个员工 1:1 对应一个 Agent。<strong>自动配置</strong>意味着您无需手动配置每个 Agent — 将员工分配到正确岗位，平台自动创建 Agent、绑定和工作区。就像新员工入职：给一个角色 → 自动获得笔记本、门禁和培训。'
-)+op(lang==='en'?'Operations:':'操作：',lang==='en'?['Organization → Employees. See all employees with their position, channels, and agent status.','Click "Add Employee" → select position → agent is auto-provisioned (Serverless mode).','Each employee gets a 1:1 binding to their agent. Admin can upgrade to Always-on (Fargate) later.','Click any employee → view/edit their personal SOUL, see connected IM channels.']:['Organization → Employees。查看所有员工的岗位、通道和 Agent 状态。','点击"添加员工" → 选择岗位 → Agent 自动配置（Serverless 模式）。','每个员工获得 1:1 Agent 绑定。管理员可以后续升级为 Always-on（Fargate）。','点击员工 → 查看/编辑个人 SOUL，查看已连接的 IM 通道。'])}},
+emp: { en:{title:'Employee Management',sub:'Assign → agents auto-provisioned.'}, zh:{title:'员工管理',sub:'分配 → Agent 自动配置。'}, body(){ return intent('Each employee maps 1:1 to an agent. <strong>Auto-provisioning:</strong> assign position → platform creates agent, binding, workspace. Like onboarding: give a role → laptop + badge + training materials.','每个员工 1:1 对应 Agent。<strong>自动配置：</strong>分配岗位 → 平台创建 Agent、绑定和工作区。像入职：给角色 → 自动获得笔记本、门禁、培训。') + steps(t('Operations:','操作：'),t(['Organization → Employees. All with position, channels, agent status.','Add Employee → select position → auto-provisioned (Serverless).','Each gets 1:1 binding. Can upgrade to Always-on later.','Click employee → edit personal SOUL, view IM channels.'],['Organization → Employees。显示岗位、通道、Agent 状态。','添加员工 → 选择岗位 → 自动配置（Serverless）。','每个获得 1:1 绑定。可后续升级为 Always-on。','点击员工 → 编辑个人 SOUL，查看 IM 通道。'])); }},
 
-// ─── 8. Global SOUL ───
-{id:'soul-g',en:'Global SOUL — Company Constitution',zh:'全局 SOUL — 公司章程',de:'Company-wide rules every agent must follow.',dz:'所有 Agent 必须遵循的公司级规则。',
-h(){return wb('','',
-'The Global SOUL is the <strong>company constitution</strong>. It establishes core identity ("You are a digital employee of ACME Corp"), compliance rules ("Never share customer PII"), and behavioral guardrails that <strong>no position or personal customization can override</strong>. 50 different roles share the same ethical and legal foundation.',
-'全局 SOUL 是<strong>公司章程</strong>。建立核心身份（"你是 ACME 的数字员工"）、合规规则（"绝不泄露客户 PII"）和行为护栏，<strong>任何岗位或个人自定义都无法覆盖</strong>。50 个不同角色共享相同的道德和法律基础。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Security Center → Policies tab → "Edit Global SOUL". Saves to S3 <code>_shared/soul/global/SOUL.md</code>.':'<strong>导航：</strong>Security Center → Policies → "Edit Global SOUL"。保存到 S3 <code>_shared/soul/global/SOUL.md</code>。',''
-)+`<div class="ch"><span class="cn" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#f87171">🔒 Global (IT locked)</span><span class="ca">→</span><span class="cn p">✏️ Position (dept managed)</span><span class="ca">→</span><span class="cn s">✏️ Personal (employee edits)</span><span class="ca">=</span><span class="cn c">What agent reads</span></div>`}},
+soul: { en:{title:'SOUL Editor — 3-Layer Identity',sub:'Global → Position → Personal = what agent reads.'}, zh:{title:'SOUL 编辑器 — 三层身份',sub:'全局 → 岗位 → 个人 = Agent 读取的内容。'}, body(){ return intent('SOUL defines <strong>who the agent is</strong>. Three layers: Global (company constitution, IT-locked), Position (department handbook, dept-managed), Personal (desk setup, employee-editable). Each layer adds specificity without overriding the one above.','SOUL 定义<strong>Agent 是谁</strong>。三层：全局（公司章程，IT 锁定）、岗位（部门手册，部门管理）、个人（办公桌布置，员工可编辑）。每层增加具体性而不覆盖上层。') + flow(['🔒 Global\n'+t('IT locked','IT 锁定'),'d','✏️ Position\n'+t('Dept managed','部门管理'),'p','✏️ Personal\n'+t('Employee edits','员工编辑'),'s','= Merged\n'+t('Agent reads','Agent 读取'),'c']) + note('info','📍',t('<strong>Global:</strong> Security Center → Policies → Edit Global SOUL<br><strong>Position:</strong> Organization → Positions → click → SOUL tab<br><strong>Personal:</strong> Agent Factory → click agent → Personal tab','<strong>全局：</strong>Security Center → Policies → Edit Global SOUL<br><strong>岗位：</strong>Organization → Positions → 点击 → SOUL 标签<br><strong>个人：</strong>Agent Factory → 点击 Agent → Personal 标签')); }},
 
-// ─── 9. Position SOUL ───
-{id:'soul-p',en:'Position SOUL — Role Handbook',zh:'岗位 SOUL — 角色手册',de:'Role-specific behavior making each agent a specialist.',dz:'角色特定行为，使每个 Agent 成为专家。',
-h(){return wb('','',
-'If Global SOUL is the constitution, Position SOUL is the <strong>department handbook</strong>. An SA agent gets "Always recommend AWS Well-Architected best practices" while a Legal agent gets "Cite specific clause numbers when reviewing contracts." <strong>Edit once → all agents in that role update.</strong>',
-'如果全局 SOUL 是章程，岗位 SOUL 就是<strong>部门手册</strong>。SA Agent 获得"始终推荐 AWS 最佳实践"，法务 Agent 获得"引用具体条款号"。<strong>编辑一次 → 该角色所有 Agent 更新。</strong>'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Organization → Positions → click position → SOUL tab. Inline editor saves directly to S3.':'<strong>导航：</strong>Organization → Positions → 点击岗位 → SOUL 标签。内联编辑器直接保存到 S3。','')}},
+agents: { en:{title:'Agent Factory',sub:'Fleet management — status, models, quality, deploy mode.'}, zh:{title:'Agent 工厂',sub:'车队管理 — 状态、模型、质量、部署模式。'}, body(){ return intent('Like a <strong>car dealership inventory</strong>: every agent\'s status, model, quality score, deployment mode. Set Bedrock models per position — <strong>executives use Claude Opus, interns use Nova Lite</strong>.','像<strong>汽车库存系统</strong>：每个 Agent 的状态、模型、质量分、部署模式。按岗位设置模型 — <strong>高管用 Claude Opus，实习生用 Nova Lite</strong>。') + note('info','📍',t('<strong>Navigate:</strong> Agent Factory. 20 agents with sortable columns. Click → SOUL editor, session history, skill list.','<strong>导航：</strong>Agent Factory。20 个 Agent，可排序。点击 → SOUL 编辑器、会话历史、技能列表。')); }},
 
-// ─── 10. Personal SOUL ───
-{id:'soul-u',en:'Personal SOUL — Preferences',zh:'个人 SOUL — 个人偏好',de:'Individual customization without affecting others.',dz:'个性化定制，不影响其他 Agent。',
-h(){return wb('','',
-'The personal layer is like an employee\'s <strong>desk setup</strong> — same job, different preferences. "I prefer bullet points" or "Always respond in Chinese." Editable by the <strong>employee themselves</strong> through the Portal, or by admin through Agent Factory.',
-'个人层像员工的<strong>办公桌布置</strong> — 相同工作，不同偏好。"我喜欢要点格式"或"始终用中文回复"。可由<strong>员工通过门户自行编辑</strong>，也可由管理员通过 Agent Factory 编辑。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Agent Factory → click agent → Edit SOUL → Personal tab. Or: employee edits via Portal → My Profile → USER.md.':'<strong>导航：</strong>Agent Factory → 点击 Agent → Edit SOUL → Personal 标签。或：员工通过 Portal → My Profile → USER.md 编辑。','')}},
+skills: { en:{title:'Skill Market',sub:'Apps for agents — browse, prerequisites, assign.'}, zh:{title:'技能市场',sub:'Agent 的应用 — 浏览、前置条件、分配。'}, body(){ return intent('Skills are <strong>apps on a phone</strong>. Agents have basic conversation; skills extend: web search, CRM, SAP. <strong>Assigned to positions, not individuals.</strong> Install for "SA" → all 20 SA agents get it. AWS-native skills = zero config (IAM role).','技能是<strong>手机应用</strong>。Agent 自带对话；技能扩展：搜索、CRM、SAP。<strong>分配给岗位而非个人。</strong>为"SA"安装 → 20 个 SA Agent 都获得。AWS 原生技能 = 零配置（IAM 角色）。') + steps(t('Assign skills:','分配技能：'),t(['Skill Market → browse 26 skills (Layer 1 built-in + Layer 2 S3).','Click skill → check prerequisites (API key or IAM role).','Select position → "Assign". All agents in that position get it.','AWS-native (bedrock-kb-search, nova-canvas) = zero config.'],['技能市场 → 浏览 26 个技能（Layer 1 内置 + Layer 2 S3）。','点击技能 → 检查前置条件（API 密钥或 IAM 角色）。','选择岗位 → "分配"。该岗位所有 Agent 获得。','AWS 原生（bedrock-kb-search、nova-canvas）= 零配置。'])); }},
 
-// ─── 11. Agent Factory ───
-{id:'af',en:'Agent Factory',zh:'Agent 工厂',de:'Fleet management: status, models, quality, deployment mode.',dz:'车队管理：状态、模型、质量、部署模式。',
-h(){return wb('','',
-'Like a <strong>car dealership inventory</strong>: every agent\'s status (running/idle), model assignment, quality score, and deployment mode (Serverless vs Always-on). You can set Bedrock models per position — <strong>executives use Claude Opus while interns use Nova Lite</strong>.',
-'像<strong>汽车库存系统</strong>：每个 Agent 的状态（运行/空闲）、模型分配、质量分和部署模式（Serverless vs Always-on）。可按岗位设置 Bedrock 模型 — <strong>高管用 Claude Opus，实习生用 Nova Lite</strong>。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Agent Factory. Shows all 20 agents with sortable columns. Click any agent → full detail view with SOUL editor, session history, skill list.':'<strong>导航：</strong>Agent Factory。显示所有 20 个 Agent，可排序。点击 Agent → 完整详情，含 SOUL 编辑器、会话历史、技能列表。','')}},
+kb: { en:{title:'Knowledge Base',sub:'Company library — upload, categorize, assign.'}, zh:{title:'知识库',sub:'公司图书馆 — 上传、分类、分配。'}, body(){ return intent('KB gives agents access to <strong>proprietary information</strong> — product docs, HR policies, contracts. Without KB, agents use only training data. Assignment model: <strong>library card system</strong> — you choose which roles access which libraries.','知识库让 Agent 访问<strong>专有信息</strong> — 产品文档、HR 政策、合同。没有 KB 只用训练数据。分配模型：<strong>借阅证系统</strong> — 您选择哪些角色访问哪些图书馆。') + note('info','📍',t('<strong>Navigate:</strong> Knowledge Base. Upload docs, organize categories, assign via Assignments tab.','<strong>导航：</strong>Knowledge Base。上传文档，分类，通过 Assignments 标签分配。')); }},
 
-// ─── 12. Skill Market ───
-{id:'skills',en:'Skill Market',zh:'技能市场',de:'Apps for agents — browse, check prerequisites, assign.',dz:'Agent 的应用商店 — 浏览、检查前置条件、分配。',
-h(){return wb('','',
-'Skills are <strong>apps on a phone</strong>. The agent has basic conversation ability, but skills extend it — web search, CRM queries, SAP integration. Key design: <strong>skills are assigned to positions, not individuals</strong>. Install once for "SA" role → all 20 SA agents get it. Some need API keys; AWS-native skills use IAM roles with <strong>zero config</strong>.',
-'技能就像<strong>手机应用</strong>。Agent 自带对话能力，技能扩展它 — 网络搜索、CRM 查询、SAP 集成。关键设计：<strong>技能分配给岗位而非个人</strong>。为"SA"角色安装一次 → 20 个 SA Agent 都获得。有些需要 API 密钥；AWS 原生技能用 IAM 角色<strong>零配置</strong>。'
-)+op(lang==='en'?'How to assign skills:':'如何分配技能：',lang==='en'?['Skill Market → browse 26 available skills (Layer 1 built-in + Layer 2 S3-hosted).','Click a skill → Step 1: check prerequisites (API keys or IAM role).','Step 2: select a position → click "Assign". All agents in that position get it.','AWS-native skills (bedrock-kb-search, nova-canvas, ses-mailer) need zero config.']:['技能市场 → 浏览 26 个可用技能（Layer 1 内置 + Layer 2 S3 托管）。','点击技能 → 步骤 1：检查前置条件（API 密钥或 IAM 角色）。','步骤 2：选择岗位 → 点击"分配"。该岗位所有 Agent 获得技能。','AWS 原生技能（bedrock-kb-search、nova-canvas、ses-mailer）零配置。'])}},
+im: { en:{title:'IM Channels — Last Mile',sub:'Connect IM platforms for employee chat.'}, zh:{title:'IM 渠道 — 最后一公里',sub:'连接 IM 平台让员工聊天。'}, body(){ return intent('IM channels = <strong>last mile</strong>. Agents meet employees where they are (Feishu, Telegram, Discord, Slack). Admin configures once via Gateway UI. Employees self-pair via Portal. <strong>DM access mode MUST be "Open"</strong> — H2 Proxy handles identity, not Gateway.','IM 渠道 = <strong>最后一公里</strong>。Agent 在员工已有平台交流（飞书、Telegram、Discord、Slack）。管理员在 Gateway UI 配置一次。员工通过门户自助配对。<strong>DM 访问模式必须选 "Open"</strong> — H2 Proxy 处理身份验证。') + steps(t('Setup:','设置：'),t(['Port-forward to Gateway UI (port 18789)','Channels → Add Feishu/Telegram/Discord','<strong>DM access = "Open"</strong> (not Pairing!)','Admin Console → IM Channels → Refresh → "Bot Active"','Employees: Portal → Connect IM → self-pair'],['端口转发到 Gateway UI（端口 18789）','Channels → 添加飞书/Telegram/Discord','<strong>DM 访问 = "Open"</strong>（不是 Pairing！）','Admin Console → IM Channels → 刷新 → "Bot Active"','员工：Portal → Connect IM → 自助配对'])) + note('warn','⚠️',t('<strong>Critical:</strong> If DM policy is "Pairing", employees get blocked. H2 Proxy does binding check — Gateway-level pairing is unnecessary for enterprise.','<strong>关键：</strong>如果 DM 策略是"Pairing"，员工会被阻止。H2 Proxy 做绑定检查 — 企业版不需要 Gateway 层配对。')); }},
 
-// ─── 13. Knowledge Base ───
-{id:'kb',en:'Knowledge Base',zh:'知识库',de:'Company library — upload docs, assign to positions.',dz:'公司图书馆 — 上传文档，分配给岗位。',
-h(){return wb('','',
-'Knowledge bases give agents access to <strong>your company\'s proprietary information</strong> — product docs, HR policies, customer contracts. Without KB, agents only use training data. The assignment model: <strong>library card system</strong> — you decide which roles get access to which libraries.',
-'知识库让 Agent 访问<strong>公司专有信息</strong> — 产品文档、HR 政策、客户合同。没有知识库只能用训练数据。分配模型：<strong>图书借阅证系统</strong> — 您决定哪些角色访问哪些图书馆。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Knowledge Base. Upload documents, organize into categories, assign to positions via the Assignments tab.':'<strong>导航：</strong>Knowledge Base。上传文档，分类组织，通过 Assignments 标签分配给岗位。','')}},
+sec: { en:{title:'Security Center',sub:'Defense in depth — 4 independent layers.'}, zh:{title:'安全中心',sub:'纵深防御 — 4 层独立防护。'}, body(){ return intent('SOUL says what agents <strong>should</strong> do. Security enforces what they <strong>can</strong> do. 4 layers: L1 SOUL (prompt rules), L2 Permission (tool allowlist), L3 Guardrail (Bedrock filtering), L4 Runtime (isolated VM). Bank vault: lock + alarm + guard.','SOUL 说明 Agent <strong>应该</strong>做什么。安全强制执行 Agent <strong>能</strong>做什么。4 层：L1 SOUL（提示规则）、L2 Permission（工具白名单）、L3 Guardrail（Bedrock 过滤）、L4 Runtime（隔离 VM）。银行保险库：锁 + 警报 + 保安。')
+    + card(t('Defense Layers','防护层次'),['L4','Runtime','Isolated Firecracker microVM','var(--primary)','L3','Guardrail','Bedrock content filtering','var(--cyan)','L2','Permission','Tool allowlist per position','var(--success)','L1','SOUL','Prompt-level rules','var(--warn)'].reduce((a,_,i,arr)=>i%4===0?a+`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px"><span style="color:${arr[i+3]};font-weight:700;width:28px">${arr[i]}</span><span style="font-weight:600;min-width:90px">${arr[i+1]}</span><span style="color:var(--text-m)">${arr[i+2]}</span></div>`:a,'')); }},
 
-// ─── 14. IM Channels ───
-{id:'im',en:'IM Channels — Last Mile',zh:'IM 渠道 — 最后一公里',de:'Connect IM platforms so employees chat via their favorite app.',dz:'连接 IM 平台，让员工用喜爱的应用聊天。',
-h(){return wb('','',
-'IM channels are the <strong>last mile</strong> — agents meet employees where they already are (Feishu, Telegram, Discord, Slack). Admin configures once via Gateway UI, then employees self-pair through the Portal. <strong>DM access mode must be "Open"</strong> — H2 Proxy handles identity verification, not Gateway.',
-'IM 渠道是<strong>最后一公里</strong> — Agent 在员工已有的平台上交流（飞书、Telegram、Discord、Slack）。管理员在 Gateway UI 配置一次，员工通过门户自助配对。<strong>DM 访问模式必须选 "Open"</strong> — H2 Proxy 处理身份验证，不是 Gateway。'
-)+op(lang==='en'?'Setup flow:':'设置流程：',lang==='en'?['Port-forward to Gateway UI: <code>aws ssm start-session --target &lt;ID&gt; --region &lt;REGION&gt; --document-name AWS-StartPortForwardingSession --parameters portNumber=18789,localPortNumber=18789</code>','Open http://localhost:18789 → Channels → Add Feishu/Telegram/Discord','<strong>Important:</strong> Set DM access mode to "Open" (not Pairing)','Verify in Admin Console → IM Channels → Refresh → should show "Bot Active"','Employees then self-pair via Portal → Connect IM']:['端口转发到 Gateway UI：<code>aws ssm start-session --target &lt;ID&gt; --region &lt;REGION&gt; --document-name AWS-StartPortForwardingSession --parameters portNumber=18789,localPortNumber=18789</code>','打开 http://localhost:18789 → Channels → 添加飞书/Telegram/Discord','<strong>重要：</strong>DM 访问模式选 "Open"（不是 Pairing）','在 Admin Console → IM Channels → 刷新 → 应显示 "Bot Active"','员工通过 Portal → Connect IM 自助配对'])}},
+monitor: { en:{title:'Monitor Center',sub:'Live sessions, agent health, alerts.'}, zh:{title:'监控中心',sub:'实时会话、Agent 健康、告警。'}, body(){ return intent('Without monitoring = <strong>flying blind</strong>. Live sessions, CloudWatch trends, quality scores. Alert rules = <strong>know before users do</strong>.','没有监控 = <strong>盲飞</strong>。实时会话、CloudWatch 趋势、质量分。告警规则 = <strong>在用户之前发现问题</strong>。') + note('info','📍',t('<strong>Navigate:</strong> Monitor → tabs: Live Sessions, Agent Health, Alert Rules, Runtime Events.','<strong>导航：</strong>Monitor → 标签：Live Sessions、Agent Health、Alert Rules、Runtime Events。')); }},
 
-// ─── 15. Security Center ───
-{id:'sec',en:'Security Center — Defense in Depth',zh:'安全中心 — 纵深防御',de:'4 independent security layers.',dz:'4 层独立安全防护。',
-h(){return wb('','',
-'SOUL rules say what agents <strong>should</strong> do. Security Center enforces what they <strong>can</strong> do. Four independent layers: <strong>L1 SOUL</strong> (prompt rules), <strong>L2 Permission</strong> (tool allowlist per position), <strong>L3 Guardrail</strong> (Bedrock content filtering), <strong>L4 Runtime</strong> (isolated Firecracker VM). Even if one layer fails, others hold — like a bank vault with lock + alarm + guard.',
-'SOUL 规则说明 Agent <strong>应该</strong>做什么，安全中心强制执行 Agent <strong>能</strong>做什么。四层独立防护：<strong>L1 SOUL</strong>（提示规则）、<strong>L2 Permission</strong>（岗位工具白名单）、<strong>L3 Guardrail</strong>（Bedrock 内容过滤）、<strong>L4 Runtime</strong>（隔离 Firecracker VM）。即使一层失效，其他层仍然有效 — 像银行保险库：锁 + 警报 + 保安。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Security Center → tabs: Agent Runtimes, Policies (Global SOUL, tool permissions per position), Infrastructure.':'<strong>导航：</strong>Security Center → 标签：Agent Runtimes、Policies（全局 SOUL、岗位工具权限）、Infrastructure。','')}},
+audit: { en:{title:'Audit Center',sub:'Complete audit trail.'}, zh:{title:'审计中心',sub:'完整审计日志。'}, body(){ return intent('Every invocation, guardrail block, permission denial logged. Essential for <strong>compliance</strong> — trace exactly what happened, when, for whom.','每次调用、护栏拦截、权限拒绝都被记录。对<strong>合规</strong>至关重要 — 精确追踪发生了什么、何时、对谁。') + note('info','📍',t('<strong>Navigate:</strong> Audit Center. Filter by event type, employee, date. Export CSV.','<strong>导航：</strong>Audit Center。按事件类型、员工、日期筛选。导出 CSV。')); }},
 
-// ─── 16. Monitor ───
-{id:'mon',en:'Monitor Center',zh:'监控中心',de:'Live sessions, agent health, runtime events.',dz:'实时会话、Agent 健康、运行时事件。',
-h(){return wb('','',
-'Without monitoring you\'re <strong>flying blind</strong>. Live sessions show who\'s talking now. Agent Activity chart shows invocation trends from CloudWatch. Agent Health tab shows quality scores and last-active times. Alert Rules let you set thresholds — <strong>know before your users do</strong>.',
-'没有监控就是<strong>盲飞</strong>。实时会话显示谁在对话。Agent Activity 图表显示 CloudWatch 调用趋势。Agent Health 标签显示质量分和最后活跃时间。告警规则设置阈值 — <strong>在用户之前发现问题</strong>。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Monitor. Tabs: Live Sessions, Agent Health (20 agents), Alert Rules, Runtime Events.':'<strong>导航：</strong>Monitor。标签：Live Sessions、Agent Health（20 个 Agent）、Alert Rules、Runtime Events。','')}},
+usage: { en:{title:'Usage & Cost',sub:'Token tracking, budgets, optimization.'}, zh:{title:'用量与成本',sub:'Token 追踪、预算、优化。'}, body(){ return intent('Cost transparency builds trust. Per-agent/position/department tracking. Budget alerts before spikes. Model hierarchy = key cost lever.','成本透明建立信任。按 Agent/岗位/部门追踪。成本飙升前预算告警。模型层级 = 关键成本杠杆。') + note('info','📍',t('<strong>Navigate:</strong> Usage & Cost. Daily/weekly/monthly trends. Drill down by employee or position.','<strong>导航：</strong>Usage & Cost。日/周/月趋势。按员工或岗位下钻。')); }},
 
-// ─── 17. Audit Center ───
-{id:'audit',en:'Audit Center',zh:'审计中心',de:'Complete audit trail of all agent activity.',dz:'所有 Agent 活动的完整审计日志。',
-h(){return wb('','',
-'Every agent invocation, guardrail block, permission denial, and admin action is logged. The audit trail is essential for <strong>compliance and accountability</strong> — if an agent does something unexpected, you can trace exactly what happened, when, and for which employee.',
-'每次 Agent 调用、护栏拦截、权限拒绝和管理员操作都会被记录。审计日志对<strong>合规和问责</strong>至关重要 — 如果 Agent 做了意外的事，可以精确追踪发生了什么、何时、对哪个员工。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Audit Center. Filter by event type (agent_invocation, guardrail_block, permission_denied), employee, date range. Export as CSV.':'<strong>导航：</strong>Audit Center。按事件类型（agent_invocation、guardrail_block、permission_denied）、员工、日期范围筛选。导出为 CSV。','')}},
+playground: { en:{title:'Playground — AI Staging',sub:'Test as any employee before rollout.'}, zh:{title:'Playground — AI 预发布',sub:'发布前模拟任何员工测试。'}, body(){ return intent('Test new SOUL/skills as a specific employee <strong>before rolling out to 100 agents</strong>. See assembled workspace files. Debug behavior issues before employees encounter them. Live mode = real AgentCore.','在推送给 100 个 Agent 之前，<strong>模拟特定员工测试</strong>新 SOUL/技能。查看组装的工作区文件。在员工遇到问题之前调试。Live 模式 = 真实 AgentCore。') + steps(t('Testing flow:','测试流程：'),t(['Select employee (e.g. Carol — Finance Analyst)','Mode: Live (AgentCore) or Simulate','Send "who are you?" → verify identity','Send "run git status" as Finance → refused (no shell)','Switch to Ryan (SDE) → executes (SDE has shell)'],['选择员工（如 Carol — 财务分析师）','模式：Live（AgentCore）或 Simulate','发送"who are you?" → 验证身份','以财务身份"run git status" → 被拒（无 shell）','切换 Ryan（SDE） → 执行（SDE 有 shell）'])); }},
 
-// ─── 18. Usage & Cost ───
-{id:'usage',en:'Usage & Cost',zh:'用量与成本',de:'Token consumption, cost tracking, budgets.',dz:'Token 消耗、成本追踪、预算。',
-h(){return wb('','',
-'Cost transparency builds trust. See per-agent, per-position, per-department token consumption and estimated cost. Set budget alerts so you know <strong>before costs spike</strong>. The model hierarchy (Nova Lite default, Sonnet for executives) is a key cost optimization lever.',
-'成本透明建立信任。查看每 Agent、每岗位、每部门的 Token 消耗和预估成本。设置预算告警，<strong>在成本飙升前</strong>收到通知。模型层级（Nova Lite 默认、Sonnet 用于高管）是关键的成本优化杠杆。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Usage & Cost. Dashboard view with daily/weekly/monthly trends. Drill down by employee or position.':'<strong>导航：</strong>Usage & Cost。仪表盘视图，日/周/月趋势。按员工或岗位下钻。','')}},
+settings: { en:{title:'Settings & System',sub:'Model config, agent config, health.'}, zh:{title:'设置与系统',sub:'模型配置、Agent 配置、健康。'}, body(){ return intent('Settings = <strong>brain configuration</strong>. Default model, position overrides, memory compaction, language. System tab: CPU/memory/disk, port status.','设置 = <strong>大脑配置</strong>。默认模型、岗位覆盖、记忆压缩、语言。System 标签：CPU/内存/磁盘、端口状态。')
+    + `<table class="tbl"><tr><th>${t('Scope','范围')}</th><th>${t('Model','模型')}</th><th>${t('Cost','成本')}</th><th>${t('Use Case','场景')}</th></tr>`
+    + `<tr><td><span class="badge green">Default</span></td><td>Nova 2 Lite</td><td>$0.30/1M</td><td>${t('All employees','所有员工')}</td></tr>`
+    + `<tr><td><span class="badge yellow">Fallback</span></td><td>Nova Pro</td><td>$0.80/1M</td><td>${t('When default fails','默认失败时')}</td></tr>`
+    + `<tr><td><span class="badge blue">pos-exec</span></td><td>Claude Sonnet 4.6</td><td>$3.00/1M</td><td>${t('Executive tier','高管层级')}</td></tr></table>`; }},
 
-// ─── 19. Playground ───
-{id:'play',en:'Playground — AI Staging',zh:'Playground — AI 预发布',de:'Test agents as different employees before rollout.',dz:'在正式发布前模拟不同员工测试 Agent。',
-h(){return wb('','',
-'Before rolling out a new SOUL or skill to 100 agents, <strong>test it as a specific employee</strong>. The Playground shows the final assembled workspace files — see exactly what markdown the agent receives. <strong>Debug behavior issues before employees encounter them.</strong> Live mode routes through real AgentCore.',
-'在将新 SOUL 或技能推送给 100 个 Agent 之前，<strong>模拟特定员工测试</strong>。Playground 显示最终组装的工作区文件 — 精确查看 Agent 接收到的内容。<strong>在员工遇到问题之前调试行为。</strong>Live 模式通过真实 AgentCore 路由。'
-)+op(lang==='en'?'How to test:':'如何测试：',lang==='en'?['Playground → select employee from dropdown (e.g. Carol Zhang — Finance Analyst)','Mode: Live (real AgentCore) or Simulate (canned permission responses)','Send "who are you?" → verify identity matches position SOUL','Send "run git status" as Finance → should be refused (no shell access)','Switch to Ryan (SDE) → same command should execute (SDE has shell)']:['Playground → 从下拉选择员工（如 Carol Zhang — 财务分析师）','模式：Live（真实 AgentCore）或 Simulate（模拟权限响应）','发送"who are you?" → 验证身份匹配岗位 SOUL','以财务身份发送"run git status" → 应被拒绝（无 shell 权限）','切换到 Ryan（SDE） → 相同命令应执行（SDE 有 shell）'])}},
+// ═══ EMPLOYEE PORTAL ═══
+'portal-chat': { en:{title:'Chat with Your Agent',sub:'Full-screen chat — knows your role, remembers conversations.'}, zh:{title:'与 Agent 对话',sub:'全屏聊天 — 了解角色，记住对话。'}, body(){ return intent('90% of your time is here. First message ~6s (cold start), then fast. Agent knows your role, has team skills, <strong>remembers previous conversations</strong>.','90% 时间在这里。首次消息约 6 秒（冷启动），之后很快。Agent 了解角色，有团队技能，<strong>记住之前的对话</strong>。') + note('info','📍',t('<strong>Portal → Chat</strong> (first item). Shows "Connected" with model name.','<strong>Portal → Chat</strong>（第一项）。显示"Connected"和模型名称。')); }},
 
-// ─── 20. Settings + Troubleshooting ───
-{id:'settings',en:'Settings & Troubleshooting',zh:'设置与故障排除',de:'Model config, system health, and common fixes.',dz:'模型配置、系统状态和常见修复。',
-h(){return wb('','',
-'Settings controls the <strong>brain configuration</strong>: default model, position overrides, memory compaction, language preferences. The System tab shows real-time CPU/memory/disk and port status. For troubleshooting, 90% of issues are: service not running, data not loading, or routing broken.',
-'设置控制<strong>大脑配置</strong>：默认模型、岗位覆盖、记忆压缩、语言偏好。System 标签显示实时 CPU/内存/磁盘和端口状态。故障排除方面，90% 的问题是：服务未运行、数据未加载、路由中断。'
-)+an('🔧','c',lang==='en'?`<strong>Quick diagnostics (SSM into EC2):</strong><div class="cb"># Services running?\nsystemctl is-active openclaw-admin tenant-router bedrock-proxy-h2\n\n# Ports listening?\nss -tlnp | grep -E '8090|8091|8099|18789'\n\n# DynamoDB accessible?\ncurl -s http://localhost:8099/api/v1/org/employees | python3 -c "import json,sys; print(f'Employees: {len(json.load(sys.stdin))}')"</div>`:`<strong>快速诊断（SSM 进入 EC2）：</strong><div class="cb"># 服务运行中？\nsystemctl is-active openclaw-admin tenant-router bedrock-proxy-h2\n\n# 端口监听中？\nss -tlnp | grep -E '8090|8091|8099|18789'\n\n# DynamoDB 可访问？\ncurl -s http://localhost:8099/api/v1/org/employees | python3 -c "import json,sys; print(f'Employees: {len(json.load(sys.stdin))}')"</div>`,''
-)+mk(lang==='en'?'Common Issues':'常见问题',`<table class="mt"><tr><th>${lang==='en'?'Symptom':'症状'}</th><th>${lang==='en'?'Fix':'修复'}</th></tr><tr><td>${lang==='en'?'Agent has no identity':'Agent 无身份'}</td><td><code>deploy.sh --skip-seed</code> ${lang==='en'?'(rebuild Docker image)':'（重建 Docker 镜像）'}</td></tr><tr><td>${lang==='en'?'IM: "not linked"':'IM："未绑定"'}</td><td>${lang==='en'?'Portal → Connect IM → pair':'Portal → Connect IM → 配对'}</td></tr><tr><td>${lang==='en'?'/start not recognized':'IM：/start 无效'}</td><td><code>systemctl restart bedrock-proxy-h2</code></td></tr><tr><td>${lang==='en'?'Monitor shows 0':'Monitor 显示 0'}</td><td>${lang==='en'?'Update CFN stack (DynamoDB IAM)':'更新 CFN stack（DynamoDB IAM）'}</td></tr><tr><td>${lang==='en'?'Login fails':'登录失败'}</td><td><code>systemctl restart openclaw-admin</code></td></tr></table>`)}},
-],
+'portal-im': { en:{title:'Connect IM — Chat Anywhere',sub:'Self-service pairing: QR → /start → BIND.'}, zh:{title:'连接 IM — 随时随地对话',sub:'自助配对：QR → /start → BIND。'}, body(){ return intent('Use your agent <strong>without opening the portal</strong>. Pairing = two-factor auth: portal knows who you are, /start TOKEN proves the IM account is yours.','<strong>无需打开门户</strong>使用 Agent。配对 = 双因素认证：门户知道你是谁，/start TOKEN 证明 IM 账户属于你。') + steps(t('3-step pairing:','3 步配对：'),t(['Portal → Connect IM → click "Connect" on Feishu → get token + QR','Open Feishu, find company bot, send <code>/start TOKEN</code>','Bot: "Linking to [Name · Position]. Reply BIND" → send <strong>BIND</strong> → Done!'],['Portal → Connect IM → 点击飞书"Connect" → 获取令牌 + QR','打开飞书，找到公司 bot，发送 <code>/start TOKEN</code>','Bot："绑定 [姓名 · 岗位]。回复 BIND" → 发送 <strong>BIND</strong> → 完成！'])); }},
 
-// ═══════════════════════════════════════════════════════════════════
-// EMPLOYEE PORTAL
-// ═══════════════════════════════════════════════════════════════════
-emp:[
-{id:'el',en:'Login to Employee Portal',zh:'登录员工门户',de:'A simplified interface — just your personal AI assistant.',dz:'简化界面 — 只有个人 AI 助手。',
-h(){return wb('','',
-'Employees see a <strong>completely different interface</strong> than admins. The Portal has no org management, no security settings — it\'s designed to feel like a <strong>personal AI assistant app</strong>. This separation ensures employees aren\'t overwhelmed by options they don\'t need.',
-'员工看到与管理员<strong>完全不同的界面</strong>。门户没有组织管理和安全设置 — 设计得像<strong>个人 AI 助手应用</strong>。这种分离确保员工不被不需要的选项淹没。'
-)+an('💻','c',lang==='en'?'<strong>Login:</strong> Same URL as Admin Console (http://localhost:8099). Employee role users are automatically redirected to the Portal view.':'<strong>登录：</strong>与管理控制台相同 URL (http://localhost:8099)。员工角色用户自动重定向到门户视图。','')}},
+'portal-profile': { en:{title:'My Profile',sub:'Edit USER.md — personal SOUL layer.'}, zh:{title:'我的档案',sub:'编辑 USER.md — 个人 SOUL 层。'}, body(){ return intent('Make the agent <strong>"yours"</strong>. Working style, response format, timezone. <strong>Doesn\'t override company rules</strong>, adds preferences on top.','让 Agent <strong>"变成你的"</strong>。工作风格、响应格式、时区。<strong>不覆盖公司规则</strong>，在其上添加偏好。') + note('info','📍',t('<strong>Portal → My Profile.</strong> Edit USER.md directly. Changes on next session.','<strong>Portal → My Profile。</strong>直接编辑 USER.md。下次会话生效。')); }},
 
-{id:'ec',en:'Chat with Your Agent',zh:'与你的 Agent 对话',de:'Full-screen chat — your agent knows your role and remembers conversations.',dz:'全屏聊天 — Agent 了解你的角色并记住对话。',
-h(){return wb('','',
-'This is where you\'ll spend <strong>90% of your time</strong>. First message takes ~6 seconds (cold start). After that, responses are fast. Your agent knows your role, has your team\'s skills, and <strong>remembers previous conversations</strong> through persistent memory.',
-'这是您 <strong>90% 时间</strong>所在的页面。第一条消息约 6 秒（冷启动）。之后响应很快。Agent 了解您的角色，拥有团队技能，并通过持久记忆<strong>记住之前的对话</strong>。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Portal → Chat (first item in sidebar). The agent shows "Connected" status with model name.':'<strong>导航：</strong>Portal → Chat（侧边栏第一项）。Agent 显示"Connected"状态和模型名称。','')}},
+'portal-skills': { en:{title:'My Skills',sub:'View active, request restricted.'}, zh:{title:'我的技能',sub:'查看已激活，申请受限。'}, body(){ return intent('Can\'t install skills yourself — <strong>security by design</strong>. Browse catalog, request access, IT decides. Like requesting software on a corporate laptop.','不能自行安装技能 — <strong>安全设计</strong>。浏览目录，申请访问，IT 决定。就像在公司笔记本申请软件。') + note('info','📍',t('<strong>Portal → My Skills.</strong> Green = active. Restricted = "Request Access" button.','<strong>Portal → My Skills。</strong>绿色 = 激活。受限 = "申请访问"按钮。')); }},
 
-{id:'ei',en:'Connect IM — Chat Anywhere',zh:'连接 IM — 随时随地对话',de:'Link your agent to Feishu, Telegram, Discord via self-service pairing.',dz:'通过自助配对将 Agent 连接到飞书、Telegram、Discord。',
-h(){return wb('','',
-'IM pairing lets you use your agent <strong>without ever opening the web portal</strong>. The pairing flow uses a time-limited token — like <strong>two-factor authentication</strong>: the portal knows who you are, and sending the token to the bot proves the IM account is yours.',
-'IM 配对让您<strong>无需打开网页即可使用 Agent</strong>。配对流程使用有时限的令牌 — 像<strong>双因素认证</strong>：门户知道您是谁，向 bot 发送令牌证明 IM 账户属于您。'
-)+op(lang==='en'?'3-step pairing flow:':'3 步配对流程：',lang==='en'?['Portal → Connect IM → click "Connect" on Feishu/Telegram/Discord → get pairing token + QR code','Open the IM app, find the company bot, send <code>/start TOKEN</code>','Bot replies "Linking to [Your Name · Position]. Reply BIND to confirm." → send <strong>BIND</strong> → Done!']:['Portal → Connect IM → 点击飞书/Telegram/Discord 的"Connect" → 获取配对令牌 + QR 码','打开 IM 应用，找到公司 bot，发送 <code>/start TOKEN</code>','Bot 回复"Linking to [姓名 · 岗位]. Reply BIND to confirm." → 发送 <strong>BIND</strong> → 完成！'])}},
+'portal-usage': { en:{title:'My Usage',sub:'Tokens, cost, daily trends.'}, zh:{title:'我的用量',sub:'Token、成本、每日趋势。'}, body(){ return intent('50 daily queries = <strong>$0.35</strong>. Cost transparency → confidence to use AI more. Company credit card with <strong>visible balance</strong>.','50 次日查询 = <strong>$0.35</strong>。成本透明 → 更有信心使用 AI。有<strong>可见余额</strong>的公司信用卡。') + note('info','📍',t('<strong>Portal → My Usage.</strong> Requests, tokens, cost, daily chart.','<strong>Portal → My Usage。</strong>请求数、Token、成本、每日图表。')); }},
 
-{id:'ep',en:'My Profile',zh:'我的档案',de:'Edit personal preferences — USER.md, language, working style.',dz:'编辑个人偏好 — USER.md、语言、工作风格。',
-h(){return wb('','',
-'The Profile page is where you make the agent <strong>"yours"</strong>. USER.md includes working style, response format, and timezone. This is the personal SOUL layer — <strong>doesn\'t override company rules</strong>, but adds your preferences on top.',
-'档案页面让 Agent <strong>"变成你的"</strong>。USER.md 包含工作风格、响应格式和时区。这是个人 SOUL 层 — <strong>不覆盖公司规则</strong>，在其上添加偏好。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Portal → My Profile. Edit USER.md directly. Changes take effect on next chat session.':'<strong>导航：</strong>Portal → My Profile。直接编辑 USER.md。更改在下次聊天时生效。','')}},
+'portal-twin': { en:{title:'Digital Twin (Preview)',sub:'Public chat link representing you.'}, zh:{title:'数字分身（预览）',sub:'代表你的公开聊天链接。'}, body(){ return intent('Public link → others talk to "your" agent when you\'re unavailable. Uses your SOUL, knowledge, memory. <strong>AI answering machine.</strong> All conversations visible to you.','公开链接 → 你不在时别人和"你的"Agent 交谈。使用你的 SOUL、知识、记忆。<strong>AI 答录机。</strong>所有对话对你可见。') + note('info','📍',t('<strong>Portal → My Profile → Digital Twin.</strong> Generate shareable link. No account needed for visitors.','<strong>Portal → My Profile → Digital Twin。</strong>生成可分享链接。访客无需账号。')); }},
 
-{id:'es',en:'My Skills',zh:'我的技能',de:'View active skills, request restricted ones.',dz:'查看已激活技能，申请受限技能。',
-h(){return wb('','',
-'Employees can\'t install skills themselves — this is <strong>by design for security</strong>. But you can see what\'s available and request access. Like requesting software on a corporate laptop: browse the catalog, submit a request, IT decides.',
-'员工不能自行安装技能 — 这是<strong>安全设计</strong>。但可以查看可用技能并申请访问。就像在公司笔记本上申请软件：浏览目录，提交申请，IT 决定。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Portal → My Skills. Active skills shown in green. Restricted skills have "Request Access" button.':'<strong>导航：</strong>Portal → My Skills。已激活技能绿色显示。受限技能有"申请访问"按钮。','')}},
+// ═══ REFERENCE ═══
+troubleshoot: { en:{title:'Troubleshooting',sub:'Common issues and fixes.'}, zh:{title:'故障排除',sub:'常见问题和修复。'}, body(){ return sectionHead(t('Quick Diagnostics','快速诊断'))
+    + `<div class="code"># ${t('All services','所有服务')}\nsystemctl is-active openclaw-admin tenant-router bedrock-proxy-h2\n\n# ${t('All ports','所有端口')}\nss -tlnp | grep -E '8090|8091|8099|18789'\n\n# ${t('H2 Proxy logs','H2 Proxy 日志')}\njournalctl -u bedrock-proxy-h2 --no-pager -n 20\n\n# ${t('Tenant Router logs','Tenant Router 日志')}\njournalctl -u tenant-router --no-pager -n 20</div>`
+    + sectionHead(t('Issue Reference','问题参考'))
+    + `<table class="tbl"><tr><th>${t('Symptom','症状')}</th><th>${t('Cause','原因')}</th><th>${t('Fix','修复')}</th></tr>`
+    + `<tr><td>${t('Agent: "I am an AI assistant" (no identity)','Agent："我是 AI 助手"（无身份）')}</td><td>${t('Docker image outdated','Docker 镜像过期')}</td><td><code>deploy.sh --skip-seed</code></td></tr>`
+    + `<tr><td>${t('IM: "not linked to employee"','IM："未绑定员工"')}</td><td>${t('No MAPPING# record','无 MAPPING# 记录')}</td><td>${t('Portal → Connect IM','Portal → Connect IM')}</td></tr>`
+    + `<tr><td>${t('/start not recognized','/start 无效')}</td><td>${t('H2 Proxy not running','H2 Proxy 未运行')}</td><td><code>systemctl restart bedrock-proxy-h2</code></td></tr>`
+    + `<tr><td>${t('IM: messages have no SOUL','IM：消息无 SOUL')}</td><td>${t('Gateway bypassing H2 Proxy','Gateway 绕过 H2 Proxy')}</td><td>${t('Check AWS_ENDPOINT_URL in Gateway service','检查 Gateway 服务的 AWS_ENDPOINT_URL')}</td></tr>`
+    + `<tr><td>${t('Monitor: 0 sessions','Monitor：0 会话')}</td><td>${t('AgentCore missing DynamoDB IAM','AgentCore 缺少 DynamoDB IAM')}</td><td>${t('Update CFN stack','更新 CFN stack')}</td></tr>`
+    + `<tr><td>${t('Login fails','登录失败')}</td><td>${t('JWT secret mismatch','JWT 密钥不匹配')}</td><td><code>systemctl restart openclaw-admin</code></td></tr>`
+    + `<tr><td>${t('BIND after pairing still rejected','BIND 后仍被拒绝')}</td><td>${t('Binding cache (60s TTL)','绑定缓存（60 秒 TTL）')}</td><td>${t('Wait 60s or restart H2 Proxy','等 60 秒或重启 H2 Proxy')}</td></tr>`
+    + `<tr><td>${t('Admin shows employee portal','管理员显示员工门户')}</td><td>${t('Roles not seeded','角色未种子')}</td><td><code>seed_roles.py --table STACK --region REGION</code></td></tr>`
+    + `<tr><td>${t('All channels "connected" (wrong)','所有通道都"connected"（错误）')}</td><td>${t('H2 Proxy not running','H2 Proxy 未运行')}</td><td><code>systemctl restart bedrock-proxy-h2</code></td></tr>`
+    + `<tr><td>${t('502 on first IM message','首条 IM 消息 502')}</td><td>${t('Cold start timeout','冷启动超时')}</td><td>${t('Retry — second message works','重试 — 第二条消息正常')}</td></tr></table>`; }},
 
-{id:'eu',en:'My Usage',zh:'我的用量',de:'Token consumption, cost, daily trends.',dz:'Token 消耗、成本、每日趋势。',
-h(){return wb('','',
-'Cost transparency builds trust. When you see 50 daily queries cost <strong>$0.35</strong>, you understand AI is affordable and use it more confidently. Like a company credit card with a <strong>visible running balance</strong>.',
-'成本透明建立信任。当看到 50 次查询仅花费 <strong>$0.35</strong>，会理解 AI 可负担并更有信心使用。就像有<strong>可见实时余额</strong>的公司信用卡。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Portal → My Usage. Shows: total requests, tokens used, estimated cost, daily trend chart.':'<strong>导航：</strong>Portal → My Usage。显示：总请求数、Token 用量、预估成本、每日趋势图。','')}},
+costs: { en:{title:'Cost Estimates',sub:'Monthly breakdown for a typical deployment.'}, zh:{title:'成本估算',sub:'典型部署月度明细。'}, body(){ return `<table class="tbl"><tr><th>${t('Component','组件')}</th><th>${t('Monthly','月费')}</th><th>${t('Notes','说明')}</th></tr>`
+    + `<tr><td>EC2 c7g.large</td><td>~$60</td><td>${t('Gateway + admin console','网关 + 管理控制台')}</td></tr>`
+    + `<tr><td>Bedrock Nova Lite</td><td>~$0.30/${t('employee','员工')}</td><td>${t('~500 messages/month','约 500 条消息/月')}</td></tr>`
+    + `<tr><td>DynamoDB</td><td>~$5</td><td>${t('On-demand','按需')}</td></tr>`
+    + `<tr><td>S3</td><td>~$1</td><td>${t('Workspace storage','工作区存储')}</td></tr>`
+    + `<tr><td>AgentCore</td><td>${t('Usage-based','按用量')}</td><td>${t('Per-session','按会话')}</td></tr>`
+    + `<tr><td><strong>${t('Total (30 emp)','总计（30 员工）')}</strong></td><td><strong>~$75/mo</strong></td><td>${t('vs $900/mo ChatGPT Team','对比 ChatGPT Team $900/月')}</td></tr></table>`
+    + sectionHead(t('Cleanup — Delete All Resources','清理 — 删除所有资源'))
+    + `<div class="code">aws cloudformation delete-stack --stack-name &lt;STACK&gt; --region &lt;REGION&gt;\naws dynamodb delete-table --table-name &lt;STACK&gt; --region &lt;REGION&gt;\naws ssm delete-parameters --names \\\n  "/openclaw/&lt;STACK&gt;/admin-password" \\\n  "/openclaw/&lt;STACK&gt;/jwt-secret" \\\n  "/openclaw/&lt;STACK&gt;/gateway-token" \\\n  "/openclaw/&lt;STACK&gt;/runtime-id" --region &lt;REGION&gt;</div>`; }},
+};
 
-{id:'er',en:'My Requests',zh:'我的申请',de:'Track skill/tool access requests and approval status.',dz:'跟踪技能/工具访问申请和审批状态。',
-h(){return wb('','',
-'When you request access to a restricted skill or tool, the request goes to your IT admin for approval. This page shows <strong>pending, approved, and denied</strong> requests with reasons. Approved tools become available in your next chat session.',
-'当您申请受限技能或工具的访问权限时，申请会发送给 IT 管理员审批。此页面显示<strong>待处理、已批准和已拒绝</strong>的申请及原因。批准的工具在下次聊天时可用。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Portal → My Requests. Pending requests show a notification badge in the sidebar.':'<strong>导航：</strong>Portal → My Requests。待处理申请在侧边栏显示通知徽章。','')}},
+// ═══ HELPER FUNCTIONS ═══
+function t(en, zh) { return lang === 'en' ? en : zh; }
 
-{id:'edt',en:'Digital Twin (Preview)',zh:'数字分身（预览）',de:'Share a public chat link representing you.',dz:'分享代表你的公开聊天链接。',
-h(){return wb('','',
-'Digital Twin creates a <strong>public chat link</strong> that others can use to talk to "your" agent when you\'re unavailable. The agent uses your SOUL, knowledge, and memory to represent you — like an AI answering machine. All conversations are visible to you in the Portal.',
-'数字分身创建一个<strong>公开聊天链接</strong>，当您不在时其他人可以与"您的"Agent 交谈。Agent 使用您的 SOUL、知识和记忆来代表您 — 像 AI 答录机。所有对话在门户中对您可见。'
-)+an('📍','i',lang==='en'?'<strong>Navigate:</strong> Portal → My Profile → "Digital Twin" section. Generate a shareable link. Recipients do not need an account.':'<strong>导航：</strong>Portal → My Profile → "Digital Twin" 区域。生成可分享链接。接收者不需要账号。','')}},
-]};
-
-function L(l){lang=l;document.querySelectorAll('.lb').forEach(b=>b.classList.toggle('a',b.textContent.includes(l==='en'?'English':'中文')));U();}
-function R(r){role=r;step=0;document.querySelectorAll('.rtb').forEach(t=>t.classList.remove('a'));document.getElementById(r==='admin'?'ra':'re').classList.add('a');U();}
-function G(i){step=i;U();window.scrollTo({top:200,behavior:'smooth'});}
-function P(){if(step>0)G(step-1);}
-function N(){if(step<S[role].length-1)G(step+1);}
-function U(){
-  const t=T[lang];
-  document.getElementById('ht').textContent=t.t;
-  document.getElementById('hp').textContent=t.d;
-  document.getElementById('ra').textContent=t.admin;
-  document.getElementById('re').textContent=t.emp;
-  document.getElementById('bp').innerHTML=t.prev;
-  document.getElementById('bn').innerHTML=t.next;
-  document.getElementById('bp').disabled=step===0;
-  document.getElementById('bn').disabled=step===S[role].length-1;
-  const steps=S[role];
-  document.getElementById('pb').innerHTML=steps.map((s,i)=>`<div class="ps ${i===step?'a':''} ${i<step?'d':''}" onclick="G(${i})"><span class="sn">${i<step?'✓':i+1}</span><span class="sl">${(lang==='en'?s.en:s.zh).split(/[—–]/)[0].trim().substring(0,12)}</span></div>`).join('');
-  document.getElementById('sc').innerHTML=steps.map((s,i)=>`<div class="sc ${i===step?'a':''}"><div class="sk"><div class="st">${lang==='en'?s.en:s.zh}</div><div class="sd">${lang==='en'?s.de:s.dz}</div>${s.h()}</div></div>`).join('');
+function intent(en, zh) {
+  return `<div class="intent" onclick="this.classList.toggle('closed')"><div class="intent-head">💡 ${t('Design Intent','设计意图')}</div><div class="intent-body">${t(en,zh)}</div></div>`;
 }
-U();
+
+function sectionHead(text) {
+  return `<div class="section-head">${text}</div>`;
+}
+
+function card(title, body) {
+  return `<div class="card"><div class="card-head">${title}</div><div class="card-body">${body}</div></div>`;
+}
+
+function note(type, icon, text) {
+  return `<div class="note ${type}"><span class="note-icon">${icon}</span><div class="note-text">${text}</div></div>`;
+}
+
+function flow(items) {
+  let html = '<div class="flow">';
+  for (let i = 0; i < items.length; i += 2) {
+    const text = items[i], cls = items[i+1] || '';
+    if (text === '') continue;
+    if (i > 0 && items[i-1] !== '') html += '<span class="flow-arrow">→</span>';
+    html += `<div class="flow-node ${cls}">${text.replace(/\n/g,'<br>')}</div>`;
+  }
+  return html + '</div>';
+}
+
+function steps(title, items) {
+  const list = Array.isArray(items) ? items : [items];
+  return `<div class="steps"><div style="font-size:13px;font-weight:600;margin-bottom:8px">${title}</div>${list.map((s,i)=>`<div class="step-item"><span class="step-num">${i+1}</span><span class="step-text">${s}</span></div>`).join('')}</div>`;
+}
+
+// ═══ RENDER ═══
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim() === (l==='en'?'EN':'中文')));
+  render();
+}
+
+function navigate(id) {
+  activePage = id;
+  render();
+  document.getElementById('main').scrollTop = 0;
+}
+
+function render() {
+  // Rail
+  let railHtml = '';
+  NAV.forEach(g => {
+    railHtml += `<div class="rail-group"><div class="rail-label">${g.group[lang]}</div>`;
+    g.items.forEach(item => {
+      railHtml += `<div class="rail-item ${item.id===activePage?'active':''}" onclick="navigate('${item.id}')"><span class="rail-icon">${item.icon}</span><span class="rail-text">${item[lang]}</span></div>`;
+    });
+    railHtml += '</div>';
+  });
+  document.getElementById('rail').innerHTML = railHtml;
+
+  // Content
+  const page = PAGES[activePage];
+  if (!page) return;
+  const info = page[lang] || page.en;
+  document.getElementById('main').innerHTML = `<div class="page active"><div class="page-title">${info.title}</div><div class="page-sub">${info.sub}</div>${page.body()}</div>`;
+}
+
+render();
 </script>
 </body>
 </html>
