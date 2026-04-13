@@ -28,6 +28,7 @@ class UserContext:
     role: str  # admin | manager | employee
     department_id: str
     position_id: str
+    must_change_password: bool = False
 
 
 def _b64encode(data: bytes) -> str:
@@ -41,7 +42,7 @@ def _b64decode(s: str) -> bytes:
     return base64.urlsafe_b64decode(s)
 
 
-def create_token(employee: dict) -> str:
+def create_token(employee: dict, must_change_password: bool = False) -> str:
     """Create a simple JWT token from employee record."""
     header = _b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
     payload_data = {
@@ -50,6 +51,7 @@ def create_token(employee: dict) -> str:
         "role": employee.get("role", "employee"),
         "departmentId": employee.get("departmentId", ""),
         "positionId": employee.get("positionId", ""),
+        "mustChangePassword": must_change_password,
         "exp": int(time.time()) + JWT_EXPIRY_HOURS * 3600,
     }
     payload = _b64encode(json.dumps(payload_data).encode())
@@ -85,6 +87,7 @@ def verify_token(token: str) -> Optional[UserContext]:
             role=data.get("role", "employee"),
             department_id=data.get("departmentId", ""),
             position_id=data.get("positionId", ""),
+            must_change_password=data.get("mustChangePassword", False),
         )
     except Exception:
         return None

@@ -31,8 +31,8 @@ def _clean(item: dict) -> dict:
     """Convert Decimal to float/int for JSON serialization."""
     cleaned = {}
     for k, v in item.items():
-        if k in ("PK", "SK", "GSI1PK", "GSI1SK"):
-            continue  # strip DynamoDB keys from response
+        if k in ("PK", "SK", "GSI1PK", "GSI1SK", "passwordHash"):
+            continue  # strip DynamoDB keys and sensitive fields from response
         if isinstance(v, Decimal):
             cleaned[k] = int(v) if v == int(v) else float(v)
         elif isinstance(v, dict):
@@ -201,6 +201,25 @@ def get_employees() -> list[dict]:
 
 def get_employee(emp_id: str) -> Optional[dict]:
     return _get_item(f"EMP#{emp_id}")
+
+def get_employee_with_password(emp_id: str) -> Optional[dict]:
+    """Get employee including passwordHash (for auth only). Do not expose in API responses."""
+    try:
+        resp = _get_table().get_item(Key={"PK": ORG_PK, "SK": f"EMP#{emp_id}"})
+        item = resp.get("Item")
+        if not item:
+            return None
+        cleaned = {}
+        for k, v in item.items():
+            if k in ("PK", "SK", "GSI1PK", "GSI1SK"):
+                continue
+            if isinstance(v, Decimal):
+                cleaned[k] = int(v) if v == int(v) else float(v)
+            else:
+                cleaned[k] = v
+        return cleaned
+    except ClientError:
+        return None
 
 def add_employee_channel(emp_id: str, channel: str) -> None:
     """Add a channel to the employee's channels list (idempotent)."""

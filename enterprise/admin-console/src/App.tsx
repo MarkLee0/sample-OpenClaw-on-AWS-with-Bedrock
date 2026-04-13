@@ -29,6 +29,9 @@ import Approvals from './pages/Approvals';
 import KnowledgeBase from './pages/Knowledge/index';
 import Workspace from './pages/Workspace/index';
 
+// Auth flow pages
+import ForceChangePassword from './pages/ForceChangePassword';
+
 // Public pages (no auth required)
 import TwinChat from './pages/TwinChat';
 
@@ -51,6 +54,18 @@ function AppRoutes() {
           <p className="text-sm text-text-muted mt-3">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // Force password change gate — blocks all navigation until password is set
+  if (user?.mustChangePassword) {
+    return (
+      <Routes>
+        <Route path="/change-password" element={<ForceChangePassword />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/twin/:token" element={<TwinChat />} />
+        <Route path="*" element={<Navigate to="/change-password" replace />} />
+      </Routes>
     );
   }
 

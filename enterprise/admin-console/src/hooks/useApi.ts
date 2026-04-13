@@ -918,6 +918,13 @@ export function useChangeAdminPassword() {
   });
 }
 
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
+      api.post<{ token: string; changed: boolean }>('/auth/change-password', data),
+  });
+}
+
 export function useAdminAssistant() {
   return useQuery<{ model: string; systemPrompt: string; maxHistoryTurns: number; maxTokens: number }>({
     queryKey: ['admin-assistant-config'],

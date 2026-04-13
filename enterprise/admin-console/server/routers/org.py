@@ -151,6 +151,7 @@ def get_employees(authorization: str = Header(default="")):
 def create_employee(body: dict):
     """Create or update an employee. Auto-provisions agent + bindings if
     the employee has a positionId but no agentId (new hire flow)."""
+    body.setdefault("mustChangePassword", True)
     result = db.create_employee(body)
     if body.get("positionId") and not body.get("agentId"):
         try:
@@ -168,6 +169,7 @@ def create_employee(body: dict):
 def update_employee(emp_id: str, body: dict, authorization: str = Header(default="")):
     require_role(authorization, roles=["admin"])
     body.pop("id", None)
+    body.pop("passwordHash", None)  # password changes must go through /auth/change-password
     result = db.update_employee(emp_id, body)
     if not result:
         raise HTTPException(404, f"Employee {emp_id} not found")

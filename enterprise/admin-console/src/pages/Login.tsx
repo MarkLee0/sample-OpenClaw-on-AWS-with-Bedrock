@@ -33,7 +33,8 @@ export default function Login() {
       const saved = localStorage.getItem('openclaw_token');
       if (saved) {
         const payload = JSON.parse(atob(saved.split('.')[1]));
-        if (payload.role === 'employee') navigate('/portal');
+        if (payload.mustChangePassword) navigate('/change-password');
+        else if (payload.role === 'employee') navigate('/portal');
         else navigate('/dashboard');
       }
     } catch (e: any) {

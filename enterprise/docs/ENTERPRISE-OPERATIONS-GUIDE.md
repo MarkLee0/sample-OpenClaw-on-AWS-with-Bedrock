@@ -35,7 +35,7 @@ Edit `.env` — only 3 values are required:
 |----------|----------|---------|-------|
 | `STACK_NAME` | Yes | `openclaw` | Names all resources. Must be unique per account/region. |
 | `REGION` | Yes | `us-east-1` | Any region with Bedrock + AgentCore (us-east-1, us-west-2, ap-northeast-1, etc.). |
-| `ADMIN_PASSWORD` | Yes | — | Shared login password for all admin accounts. |
+| `ADMIN_PASSWORD` | Yes | — | Initial password for all accounts. Employees must set a personal password on first login. |
 | `MODEL` | No | `minimax.minimax-m2.5` | Default Bedrock model ID (Standard tier). Each tier can use a different model. |
 | `INSTANCE_TYPE` | No | `c7g.large` | `t4g.small` for testing, `c7g.large` for production. |
 | `DYNAMODB_TABLE` | No | = STACK_NAME | **Must equal STACK_NAME** (IAM policy constraint). Leave empty. |
@@ -293,18 +293,19 @@ This confirms SOUL templates, tool permissions, and Bedrock connectivity are all
 1. **Add employee:** Organization → Employees → "Add Employee"
    - Select position (determines SOUL, skills, permissions)
    - A Serverless agent is auto-provisioned
-2. **Share credentials:** Employee ID + password (same as ADMIN_PASSWORD for demo, or set per-employee)
+2. **Share credentials:** Employee ID + initial password (`ADMIN_PASSWORD`)
 3. **Share Portal URL:** The port-forwarded URL or CloudFront domain
 
 ### For the Employee
 
-1. **Log in:** Open Portal URL → enter Employee ID + password
-2. **Chat:** Click "Chat" in sidebar → start talking to your agent
-3. **Connect IM (optional):**
+1. **Log in:** Open Portal URL → enter Employee ID + initial password
+2. **Set personal password:** First login requires setting a new personal password (min 8 chars, uppercase, lowercase, digit, special character). Cannot proceed until password is changed.
+3. **Chat:** Click "Chat" in sidebar → start talking to your agent
+4. **Connect IM (optional):**
    - Portal → "Connect IM" → Select platform (Telegram, Discord, etc.)
    - Follow the pairing instructions (scan QR or send `/start` token to the bot)
    - Admin approves pairing in Admin Console → Bindings → "Approve Pairing"
-4. **Profile:** Portal → "My Profile" → view agent details, SOUL version, active skills
+5. **Profile:** Portal → "My Profile" → view agent details, SOUL version, active skills
 
 ---
 

@@ -11,6 +11,7 @@ export interface AuthUser {
   positionName: string;
   agentId?: string;
   channels?: string[];
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   loading: boolean;
   login: (employeeId: string, password?: string) => Promise<void>;
   logout: () => void;
+  updateToken: (newToken: string) => void;
   isAdmin: boolean;
   isManager: boolean;
   isEmployee: boolean;
@@ -26,7 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null, token: null, loading: true,
-  login: async () => {}, logout: () => {},
+  login: async () => {}, logout: () => {}, updateToken: () => {},
   isAdmin: false, isManager: false, isEmployee: false,
 });
 
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Verify token by calling /auth/me
       fetch('/api/v1/auth/me', { headers: { Authorization: `Bearer ${saved}` } })
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(data => setUser(data as AuthUser))
+        .then(data => setUser({ ...data as AuthUser, mustChangePassword: (data as any).mustChangePassword ?? false }))
         .catch(() => { localStorage.removeItem('openclaw_token'); })
         .finally(() => setLoading(false));
     } else {
@@ -74,8 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await resp.json();
     setToken(data.token);
-    setUser(data.employee as AuthUser);
+    setUser({ ...data.employee as AuthUser, mustChangePassword: data.mustChangePassword ?? false });
     localStorage.setItem('openclaw_token', data.token);
+  };
+
+  const updateToken = (newToken: string) => {
+    setToken(newToken);
+    localStorage.setItem('openclaw_token', newToken);
+    try {
+      const payload = JSON.parse(atob(newToken.split('.')[1]));
+      setUser(prev => prev ? { ...prev, mustChangePassword: payload.mustChangePassword ?? false } : prev);
+    } catch { /* ignore decode errors */ }
   };
 
   const logout = () => {
@@ -86,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, token, loading, login, logout,
+      user, token, loading, login, logout, updateToken,
       isAdmin: user?.role === 'admin',
       isManager: user?.role === 'manager',
       isEmployee: user?.role === 'employee',
