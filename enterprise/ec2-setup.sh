@@ -171,6 +171,22 @@ sudo -H -u ubuntu XDG_RUNTIME_DIR=/run/user/1000 systemctl --user daemon-reload 
 sudo -H -u ubuntu XDG_RUNTIME_DIR=/run/user/1000 systemctl --user restart openclaw-gateway 2>/dev/null || true
 echo "  openclaw-gateway restarted"
 
+# Configure Slack from env when both Socket Mode tokens are present.
+# This keeps Slack setup reproducible across redeploys instead of relying on
+# one-time UI clicks on the gateway.
+if [ -n "${SLACK_BOT_TOKEN:-}" ] && [ -n "${SLACK_APP_TOKEN:-}" ]; then
+  echo "  Configuring Slack channel from env"
+  sudo -H -u ubuntu bash -lc '
+    export HOME=/home/ubuntu
+    export XDG_RUNTIME_DIR=/run/user/1000
+    source /home/ubuntu/.nvm/nvm.sh
+    set -o allexport
+    . /etc/openclaw/env
+    set +o allexport
+    openclaw channels add --channel slack --bot-token "$SLACK_BOT_TOKEN" --app-token "$SLACK_APP_TOKEN"
+  ' || echo "  WARN: Slack channel configuration failed"
+fi
+
 echo ""
 echo "══════════════════════════════════════════════════"
 echo "  EC2 Setup Complete!"
