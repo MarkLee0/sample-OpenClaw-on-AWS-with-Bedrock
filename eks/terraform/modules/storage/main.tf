@@ -107,6 +107,8 @@ resource "kubernetes_storage_class_v1" "efs" {
     provisioningMode = "efs-ap"
     fileSystemId     = aws_efs_file_system.this[0].id
     directoryPerms   = "700"
+    uid              = "1000"
+    gid              = "1000"
   }
 
   mount_options = ["iam"]

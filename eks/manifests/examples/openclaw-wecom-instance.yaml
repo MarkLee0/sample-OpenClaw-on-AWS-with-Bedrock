@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openclaw-wecom-credentials
+  namespace: openclaw
+type: Opaque
+# Set WeCom secret here
+stringData:
+  WECOM_BOT_ID: ""
+  WECOM_SECRET: ""
+---
+apiVersion: openclaw.rocks/v1alpha1
+kind: OpenClawInstance
+metadata:
+  name: openclaw-wecom
+  namespace: openclaw
+spec:
+  image:
+    repository: ghcr.io/openclaw/openclaw
+    tag: "2026.4.2"
+
+  plugins:
+    - "@wecom/wecom-openclaw-plugin"
+
+  config:
+    raw:
+      agents:
+        defaults:
+          model:
+            primary: amazon-bedrock/us.anthropic.claude-opus-4-6-v1
+      plugins:
+        allow:
+          - "wecom-openclaw-plugin"
+        load:
+          paths:
+            - "/home/openclaw/.openclaw/node_modules/@wecom/wecom-openclaw-plugin"
+        entries:
+          wecom-openclaw-plugin:
+            enabled: true
+      channels:
+        wecom:
+          enabled: true
+          connectionMode: websocket
+          dmPolicy: open
+          groupPolicy: open
+          botId: "${WECOM_BOT_ID}"
+          secret: "${WECOM_SECRET}"
+
+  envFrom:
+    - secretRef:
+        name: openclaw-wecom-credentials
+
+  security:
+    rbac:
+      serviceAccountAnnotations:
+        eks.amazonaws.com/role-arn: # REPLACE_WITH_BEDROCK_ROLE_ARN
+
+  storage:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: efs-sc
+
+  gateway:
+    enabled: true
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
