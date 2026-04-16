@@ -18,6 +18,7 @@ Then follow Steps 4-6 in [README_ENTERPRISE.md](../README_ENTERPRISE.md) to depl
 
 | Resource | Path |
 |----------|------|
+| Interactive UI Guide | [docs/ui-guide.html](docs/ui-guide.html) — open locally in browser |
 | Full documentation | [README_ENTERPRISE.md](../README_ENTERPRISE.md) |
 | CloudFormation template | [clawdbot-bedrock-agentcore-multitenancy.yaml](clawdbot-bedrock-agentcore-multitenancy.yaml) |
 | Environment registry | [docs/environments.md](docs/environments.md) |
