@@ -352,6 +352,18 @@ Resources:
                       --access-scope type=cluster \
                       --region "${AWS::Region}" || true
                   fi
+                - echo "=== Deploying Provisioning Service ==="
+                - git clone https://github.com/pingxiaoaws/openclaw-on-eks-graviton.git /tmp/openclaw-ps
+                - cd /tmp/openclaw-ps/eks-pod-service/terraform
+                - |
+                  terraform init \
+                    -backend-config="bucket=${TerraformStateBucket}" \
+                    -backend-config="region=${AWS::Region}" \
+                    -input=false -reconfigure
+                - |
+                  terraform apply -auto-approve -input=false \
+                    -var="cluster_name=$CLUSTER_NAME" \
+                    -var="region=${AWS::Region}" || echo "WARNING: Provisioning Service deploy failed, continuing..."
                 - echo "=== Signaling CloudFormation ==="
                 - |
                   curl -X PUT -H 'Content-Type:' \
