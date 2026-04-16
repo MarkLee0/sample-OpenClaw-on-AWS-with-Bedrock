@@ -2,7 +2,7 @@
 /**
  * eventbridge-cron — Schedule recurring tasks via Amazon EventBridge Scheduler.
  *
- * Uses AWS CLI (not SDK) to avoid extra npm dependencies in the container.
+ * Uses AWS CLI via execFileSync (argument arrays, no shell) to prevent injection.
  *
  * Actions:
  *   create:  { "action":"create", "cron_expression":"cron(0 9 * * ? *)", "timezone":"Asia/Shanghai", "message":"Check email", "schedule_name":"Daily email" }
@@ -16,8 +16,9 @@
  */
 
 'use strict';
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const REGION = process.env.AWS_REGION || 'us-east-1';
 const SCHEDULE_GROUP = process.env.EVENTBRIDGE_SCHEDULE_GROUP || 'openclaw-cron';
@@ -25,19 +26,14 @@ const CRON_LAMBDA_ARN = process.env.CRON_LAMBDA_ARN;
 const EVENTBRIDGE_ROLE_ARN = process.env.EVENTBRIDGE_ROLE_ARN;
 const TABLE_NAME = process.env.IDENTITY_TABLE_NAME || process.env.DYNAMODB_TABLE;
 
-// Resolve tenant ID: prefer /tmp/base_tenant_id (written by server.py during workspace assembly),
-// fall back to TENANT_ID env var. The env var is 'unknown' at container boot;
-// the file is the authoritative source after the first invocation.
+// Resolve tenant ID from /tmp/base_tenant_id (written by server.py), not env var
 let TENANT_ID = process.env.TENANT_ID || 'unknown';
 try {
-  const fs = require('fs');
   const base = fs.readFileSync('/tmp/base_tenant_id', 'utf8').trim();
   if (base && base !== 'unknown') TENANT_ID = base;
 } catch {}
 if (TENANT_ID === 'unknown') {
-  // Last resort: try /tmp/tenant_id and extract base from channel__user__hash format
   try {
-    const fs = require('fs');
     const full = fs.readFileSync('/tmp/tenant_id', 'utf8').trim();
     const parts = full.split('__');
     if (parts.length >= 2 && parts[1] !== 'unknown') TENANT_ID = parts[1];
@@ -48,14 +44,16 @@ let args = {};
 try { args = JSON.parse(process.argv[2] || '{}'); } catch { args = {}; }
 const action = args.action || 'list';
 
-// --- CLI helpers ---
+// --- CLI helpers (execFileSync — no shell, no injection) ---
 
-function awsCli(cmd) {
-  return execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000 }).trim();
+function aws(service, ...cmdArgs) {
+  return execFileSync('aws', [service, ...cmdArgs, '--region', REGION], {
+    encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000,
+  }).trim();
 }
 
-function awsCliJson(cmd) {
-  return JSON.parse(awsCli(cmd));
+function awsJson(service, ...cmdArgs) {
+  return JSON.parse(aws(service, ...cmdArgs, '--output', 'json'));
 }
 
 function fail(msg) {
@@ -78,7 +76,7 @@ function validateExpression(expression) {
   const rateRegex = /^rate\(\d+\s+(minute|minutes|hour|hours|day|days)\)$/;
   const atRegex = /^at\((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\)$/;
   if (atRegex.test(expression)) {
-    if (isNaN(new Date(expression.match(atRegex)[1]).getTime())) return `Invalid at() datetime`;
+    if (isNaN(new Date(expression.match(atRegex)[1]).getTime())) return 'Invalid at() datetime';
     return null;
   }
   if (rateRegex.test(expression)) {
@@ -101,7 +99,7 @@ function validateTimezone(tz) {
   catch { return `Invalid timezone "${tz}"`; }
 }
 
-// --- DynamoDB helpers (via AWS CLI) ---
+// --- DynamoDB helpers (execFileSync, no shell) ---
 
 function ddbPutCronRecord(userId, record) {
   const item = {
@@ -119,13 +117,13 @@ function ddbPutCronRecord(userId, record) {
     createdAt: { S: record.createdAt || new Date().toISOString() },
     updatedAt: { S: record.updatedAt || new Date().toISOString() },
   };
-  awsCli(`aws dynamodb put-item --table-name "${TABLE_NAME}" --item '${JSON.stringify(item)}' --region "${REGION}"`);
+  aws('dynamodb', 'put-item', '--table-name', TABLE_NAME, '--item', JSON.stringify(item));
 }
 
 function ddbGetCronRecord(userId, scheduleId) {
   try {
     const key = JSON.stringify({ PK: { S: `USER#${userId}` }, SK: { S: `CRON#${scheduleId}` } });
-    const resp = awsCliJson(`aws dynamodb get-item --table-name "${TABLE_NAME}" --key '${key}' --region "${REGION}"`);
+    const resp = awsJson('dynamodb', 'get-item', '--table-name', TABLE_NAME, '--key', key);
     if (!resp.Item) return null;
     const i = resp.Item;
     return {
@@ -144,13 +142,15 @@ function ddbGetCronRecord(userId, scheduleId) {
 
 function ddbDeleteCronRecord(userId, scheduleId) {
   const key = JSON.stringify({ PK: { S: `USER#${userId}` }, SK: { S: `CRON#${scheduleId}` } });
-  try { awsCli(`aws dynamodb delete-item --table-name "${TABLE_NAME}" --key '${key}' --region "${REGION}"`); } catch {}
+  try { aws('dynamodb', 'delete-item', '--table-name', TABLE_NAME, '--key', key); } catch {}
 }
 
 function ddbListCronRecords(userId) {
   try {
     const expr = JSON.stringify({ ':pk': { S: `USER#${userId}` }, ':sk': { S: 'CRON#' } });
-    const resp = awsCliJson(`aws dynamodb query --table-name "${TABLE_NAME}" --key-condition-expression "PK = :pk AND begins_with(SK, :sk)" --expression-attribute-values '${expr}' --region "${REGION}"`);
+    const resp = awsJson('dynamodb', 'query', '--table-name', TABLE_NAME,
+      '--key-condition-expression', 'PK = :pk AND begins_with(SK, :sk)',
+      '--expression-attribute-values', expr);
     return (resp.Items || []).map(i => ({
       scheduleId: (i.scheduleId || {}).S || '',
       scheduleName: (i.scheduleName || {}).S || '',
@@ -174,7 +174,6 @@ function buildScheduleName(userId, scheduleId) {
   return `${prefix}${userId.slice(0, maxLen)}${suffix}`;
 }
 
-// --- Human-readable schedule description ---
 const DAY_NAMES = {
   SUN: 'Sunday', MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday',
   THU: 'Thursday', FRI: 'Friday', SAT: 'Saturday',
@@ -224,13 +223,17 @@ function doCreate() {
     message, scheduleId, scheduleName: schedule_name || `Schedule ${scheduleId}`,
   });
 
-  // Create EventBridge schedule via CLI
   const targetJson = JSON.stringify({ Arn: CRON_LAMBDA_ARN, RoleArn: EVENTBRIDGE_ROLE_ARN, Input: lambdaInput });
   try {
-    awsCli(`aws scheduler create-schedule --name "${ebName}" --group-name "${SCHEDULE_GROUP}" --schedule-expression '${cron_expression}' --schedule-expression-timezone "${timezone}" --flexible-time-window '{"Mode":"OFF"}' --state ENABLED --target '${targetJson}' --region "${REGION}"`);
+    aws('scheduler', 'create-schedule',
+      '--name', ebName, '--group-name', SCHEDULE_GROUP,
+      '--schedule-expression', cron_expression,
+      '--schedule-expression-timezone', timezone,
+      '--flexible-time-window', '{"Mode":"OFF"}',
+      '--state', 'ENABLED',
+      '--target', targetJson);
   } catch (e) { return fail(`EventBridge create failed: ${e.message || e}`); }
 
-  // Save to DynamoDB
   const now = new Date().toISOString();
   try {
     ddbPutCronRecord(userId, {
@@ -240,8 +243,7 @@ function doCreate() {
       enabled: true, createdAt: now, updatedAt: now,
     });
   } catch (e) {
-    // Rollback
-    try { awsCli(`aws scheduler delete-schedule --name "${ebName}" --group-name "${SCHEDULE_GROUP}" --region "${REGION}"`); } catch {}
+    try { aws('scheduler', 'delete-schedule', '--name', ebName, '--group-name', SCHEDULE_GROUP); } catch {}
     return fail(`DynamoDB save failed (schedule rolled back): ${e.message || e}`);
   }
 
@@ -280,9 +282,8 @@ function doUpdate() {
 
   const ebName = buildScheduleName(userId, schedule_id);
 
-  // Get current schedule
   let current;
-  try { current = awsCliJson(`aws scheduler get-schedule --name "${ebName}" --group-name "${SCHEDULE_GROUP}" --region "${REGION}"`); }
+  try { current = awsJson('scheduler', 'get-schedule', '--name', ebName, '--group-name', SCHEDULE_GROUP); }
   catch (e) { return fail(`Schedule not found in EventBridge: ${e.message || e}`); }
 
   const currentInput = JSON.parse(current.Target.Input || '{}');
@@ -295,10 +296,15 @@ function doUpdate() {
   const targetJson = JSON.stringify({ Arn: CRON_LAMBDA_ARN, RoleArn: EVENTBRIDGE_ROLE_ARN, Input: JSON.stringify(currentInput) });
 
   try {
-    awsCli(`aws scheduler update-schedule --name "${ebName}" --group-name "${SCHEDULE_GROUP}" --schedule-expression '${newExpr}' --schedule-expression-timezone "${newTz}" --flexible-time-window '{"Mode":"OFF"}' --state ${newState} --target '${targetJson}' --region "${REGION}"`);
+    aws('scheduler', 'update-schedule',
+      '--name', ebName, '--group-name', SCHEDULE_GROUP,
+      '--schedule-expression', newExpr,
+      '--schedule-expression-timezone', newTz,
+      '--flexible-time-window', '{"Mode":"OFF"}',
+      '--state', newState,
+      '--target', targetJson);
   } catch (e) { return fail(`EventBridge update failed: ${e.message || e}`); }
 
-  // Update DynamoDB
   const updates = {};
   if (args.expression) updates.expression = args.expression;
   if (args.timezone) updates.timezone = args.timezone;
@@ -307,7 +313,6 @@ function doUpdate() {
   if (args.enable === true) updates.enabled = true;
   if (args.disable === true) updates.enabled = false;
 
-  // Re-write full record with updates
   try {
     ddbPutCronRecord(userId, { ...record, ...updates, updatedAt: new Date().toISOString() });
   } catch (e) { /* non-fatal */ }
@@ -324,7 +329,7 @@ function doDelete() {
   if (!record) return fail(`Schedule ${schedule_id} not found`);
 
   const ebName = buildScheduleName(userId, schedule_id);
-  try { awsCli(`aws scheduler delete-schedule --name "${ebName}" --group-name "${SCHEDULE_GROUP}" --region "${REGION}"`); }
+  try { aws('scheduler', 'delete-schedule', '--name', ebName, '--group-name', SCHEDULE_GROUP); }
   catch {} // Ignore if already deleted
 
   ddbDeleteCronRecord(userId, schedule_id);

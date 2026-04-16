@@ -8,6 +8,7 @@ Ported from: sample-host-openclaw-on-amazon-bedrock-agentcore/lambda/cron/index.
 Adapted for the Enterprise multi-tenant architecture.
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -31,6 +32,7 @@ TELEGRAM_TOKEN_SECRET_ID = os.environ.get("TELEGRAM_TOKEN_SECRET_ID", "")
 SLACK_TOKEN_SECRET_ID = os.environ.get("SLACK_TOKEN_SECRET_ID", "")
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 LAMBDA_TIMEOUT_SECONDS = int(os.environ.get("LAMBDA_TIMEOUT_SECONDS", "600"))
+ORG_PK = os.environ.get("ORG_PK", "ORG#acme")  # configurable for multi-org
 
 # --- Clients ---
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
@@ -287,7 +289,7 @@ def send_portal_notification(emp_id, text):
 
         # Write a conversation turn so it appears in Portal chat history
         ddb_table.put_item(Item={
-            "PK": "ORG#acme",
+            "PK": ORG_PK,
             "SK": f"CONV#{emp_id}#cron-{ts_ms}",
             "GSI1PK": "TYPE#conv",
             "GSI1SK": f"CONV#{emp_id}#cron-{ts_ms}",
@@ -312,6 +314,7 @@ def send_portal_notification(emp_id, text):
             "read": False,
             "createdAt": now_iso,
             "employeeId": emp_id,
+            "ttl": int(_t.time()) + 7 * 86400,  # auto-delete after 7 days
         })
         logger.info("Portal notification written for %s: %s", emp_id, text[:100])
     except Exception as e:
@@ -387,7 +390,6 @@ def handler(event, context):
 
     # Build session ID from tenant_id pattern: cron__<userId>__<hash>
     # This lets server.py's workspace assembler resolve the employee.
-    import hashlib
     tenant_hash = hashlib.md5(user_id.encode()).hexdigest()[:8]
     session_id = f"cron__{user_id}__{tenant_hash}"
     if len(session_id) < 33:
