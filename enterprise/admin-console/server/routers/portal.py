@@ -1061,3 +1061,53 @@ def portal_get_channels(authorization: str = Header(default="")):
                 "connectedAt": data.get("connectedAt", ""),
             })
     return {"channels": channels}
+
+
+# =========================================================================
+# Portal — Cron Notifications
+# =========================================================================
+
+@router.get("/api/v1/portal/notifications")
+def portal_notifications(authorization: str = Header(default="")):
+    """Get unread cron notifications for the current employee."""
+    user = require_auth(authorization)
+    emp_id = user.employee_id
+
+    table = db._get_table()
+    resp = table.query(
+        KeyConditionExpression="PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues={
+            ":pk": f"USER#{emp_id}",
+            ":sk": "NOTIFICATION#",
+        },
+        ScanIndexForward=False,
+        Limit=20,
+    )
+    items = resp.get("Items", [])
+    notifications = []
+    for item in items:
+        notifications.append({
+            "id": item.get("id", ""),
+            "type": item.get("type", ""),
+            "title": item.get("title", ""),
+            "message": item.get("message", ""),
+            "read": item.get("read", False),
+            "createdAt": item.get("createdAt", ""),
+        })
+    return {"notifications": notifications}
+
+
+@router.post("/api/v1/portal/notifications/{notif_id}/read")
+def portal_mark_notification_read(notif_id: str, authorization: str = Header(default="")):
+    """Mark a notification as read."""
+    user = require_auth(authorization)
+    emp_id = user.employee_id
+
+    table = db._get_table()
+    table.update_item(
+        Key={"PK": f"USER#{emp_id}", "SK": f"NOTIFICATION#{notif_id}"},
+        UpdateExpression="SET #r = :true",
+        ExpressionAttributeNames={"#r": "read"},
+        ExpressionAttributeValues={":true": True},
+    )
+    return {"ok": True}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Send, Bot, User, Loader2, Trash2, Zap, Radio, Shield, Clock } from 'lucide-react';
+import { Send, Bot, User, Loader2, Trash2, Zap, Radio, Shield, Clock, Bell } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePortalAgent } from '../../contexts/PortalAgentContext';
@@ -116,6 +116,32 @@ export default function PortalChat() {
 
   useEffect(() => { saveMessages(userId, messages); }, [messages, userId]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  // Poll for cron notifications every 15 seconds
+  const seenNotifs = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const data = await api.get<{ notifications: Array<{ id: string; title: string; message: string; read: boolean; createdAt: string }> }>('/portal/notifications');
+        for (const n of data.notifications || []) {
+          if (n.read || seenNotifs.current.has(n.id)) continue;
+          seenNotifs.current.add(n.id);
+          setMessages(prev => [...prev, {
+            id: Date.now() + Math.random(),
+            role: 'assistant' as const,
+            content: `🔔 **${n.title}**\n\n${n.message}`,
+            timestamp: n.createdAt || new Date().toISOString(),
+            source: 'cron',
+          }]);
+          // Mark as read
+          api.post(`/portal/notifications/${n.id}/read`, {}).catch(() => {});
+        }
+      } catch { /* silent */ }
+    };
+    poll(); // initial check
+    const interval = setInterval(poll, 15000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   const clearChat = useCallback(() => {
     setMessages([{ id: Date.now(), role: 'assistant', content: 'Chat cleared. How can I help you?', timestamp: new Date().toISOString() }]);
@@ -264,6 +290,7 @@ export default function PortalChat() {
                 {msg.source === 'agentcore' && ' · AgentCore ⚡'}
                 {msg.source === 'fargate' && ' · Fargate 🟢'}
                 {msg.source === 'always-on' && ' · Always-On 🟢'}
+                {msg.source === 'cron' && ' · Scheduled 🔔'}
                 {msg.model && ` · ${msg.model.split('/').pop()?.split(':')[0] || ''}`}
               </p>
             </div>

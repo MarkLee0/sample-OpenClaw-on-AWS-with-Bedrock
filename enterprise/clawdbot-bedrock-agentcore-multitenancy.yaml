@@ -555,6 +555,25 @@ Resources:
                 Resource:
                   - !GetAtt TenantWorkspaceBucket.Arn
                   - !Sub "${TenantWorkspaceBucket.Arn}/*"
+              - Sid: EventBridgeSchedulerAccess
+                Effect: Allow
+                Action:
+                  - scheduler:CreateSchedule
+                  - scheduler:GetSchedule
+                  - scheduler:UpdateSchedule
+                  - scheduler:DeleteSchedule
+                  - scheduler:ListSchedules
+                Resource:
+                  - !Sub "arn:aws:scheduler:${AWS::Region}:${AWS::AccountId}:schedule/openclaw-cron/*"
+              - Sid: EventBridgePassRole
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - !GetAtt CronSchedulerRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: scheduler.amazonaws.com
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-agentcore-execution-role"
@@ -1329,7 +1348,7 @@ Resources:
   AlwaysOnSGStandard:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Always-on Standard tier — HTTPS outbound only"
+      GroupDescription: "Always-on Standard tier - HTTPS outbound only"
       VpcId: !If [CreateNewVPC, !Ref OpenClawVPC, !Ref ExistingVpcId]
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -1346,7 +1365,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 2049
           ToPort: 2049
-          SourceSecurityGroupId: !Ref AlwaysOnEFSSecurityGroup
+          DestinationSecurityGroupId: !Ref AlwaysOnEFSSecurityGroup
           Description: "NFS to EFS"
       Tags:
         - Key: Name
@@ -1355,7 +1374,7 @@ Resources:
   AlwaysOnSGRestricted:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Always-on Restricted tier — AWS services only, no internet"
+      GroupDescription: "Always-on Restricted tier - AWS services only, no internet"
       VpcId: !If [CreateNewVPC, !Ref OpenClawVPC, !Ref ExistingVpcId]
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -1372,7 +1391,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 2049
           ToPort: 2049
-          SourceSecurityGroupId: !Ref AlwaysOnEFSSecurityGroup
+          DestinationSecurityGroupId: !Ref AlwaysOnEFSSecurityGroup
           Description: "NFS to EFS"
       Tags:
         - Key: Name
@@ -1381,7 +1400,7 @@ Resources:
   AlwaysOnSGEngineering:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Always-on Engineering tier — full outbound"
+      GroupDescription: "Always-on Engineering tier - full outbound"
       VpcId: !If [CreateNewVPC, !Ref OpenClawVPC, !Ref ExistingVpcId]
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -1399,7 +1418,7 @@ Resources:
   AlwaysOnSGExecutive:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: "Always-on Executive tier — full outbound"
+      GroupDescription: "Always-on Executive tier - full outbound"
       VpcId: !If [CreateNewVPC, !Ref OpenClawVPC, !Ref ExistingVpcId]
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -1554,6 +1573,111 @@ Resources:
           Value: !Sub "${AWS::StackName}-always-on-task"
 
 # ===========================================================================
+# Cron Job Resources (EventBridge Scheduler + Lambda)
+# ===========================================================================
+
+  # EventBridge Scheduler group: uses existing 'openclaw-cron' group
+  # (shared across stacks — created by deploy.sh if it doesn't exist)
+  # No CloudFormation resource needed — the group is referenced by name.
+
+  # IAM role for EventBridge Scheduler to invoke the Cron Lambda
+  CronSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-cron-scheduler-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeCronLambda
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt CronExecutorLambda.Arn
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-cron-scheduler-role"
+
+  # Cron Executor Lambda — triggered by EventBridge, warms session, delivers response
+  CronExecutorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-cron-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CronExecutorPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AgentCoreInvoke
+                Effect: Allow
+                Action:
+                  - bedrock-agentcore:InvokeAgentRuntime
+                  - bedrock-agentcore:InvokeAgentRuntimeForUser
+                Resource: "*"
+              - Sid: DynamoDBAccess
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AWS::StackName}/index/*"
+              - Sid: SecretsManagerAccess
+                Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:openclaw/*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-cron-lambda-role"
+
+  CronExecutorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-cron-executor"
+      Runtime: python3.13
+      Handler: index.handler
+      Timeout: 600
+      MemorySize: 256
+      Role: !GetAtt CronExecutorLambdaRole.Arn
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref AWS::StackName
+          AWS_REGION_OVERRIDE: !Ref AWS::Region
+      Code:
+        ZipFile: |
+          # Placeholder — real code deployed via deploy.sh
+          def handler(event, context):
+              return {"statusCode": 200, "body": "Placeholder — deploy real code via deploy.sh"}
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-cron-executor"
+
+  CronLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/openclaw/${AWS::StackName}/lambda/cron"
+      RetentionInDays: 30
+
+# ===========================================================================
 # Outputs
 # ===========================================================================
 Outputs:
@@ -1682,6 +1806,18 @@ Outputs:
     Value: !If [CreateNewVPC, !Ref PublicSubnet, !Ref ExistingSubnetId]
     Export:
       Name: !Sub "${AWS::StackName}-AlwaysOnSubnet"
+
+  CronLambdaArn:
+    Description: "ARN of the Cron Executor Lambda (triggered by EventBridge Scheduler)"
+    Value: !GetAtt CronExecutorLambda.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CronLambdaArn"
+
+  CronSchedulerRoleArn:
+    Description: "ARN of the IAM role used by EventBridge Scheduler to invoke the Cron Lambda"
+    Value: !GetAtt CronSchedulerRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-CronSchedulerRoleArn"
 
   MonthlyCost:
     Description: "Estimated monthly cost (USD)"

@@ -1178,11 +1178,45 @@ class AgentCoreHandler(BaseHTTPRequestHandler):
             or "unknown"
         )
 
+        # --- Cron/warmup action handling ---
+        action = payload.get("action", "")
+        if action == "warmup":
+            self._handle_warmup(tenant_id, payload)
+            return
+        if action == "cron":
+            self._handle_cron(tenant_id, payload)
+            return
+
         message = validate_message(
             payload.get("prompt") or payload.get("message") or str(payload)
         )
 
         logger.info("Invocation tenant_id=%s message_len=%d", tenant_id, len(message))
+        self._handle_invocation(tenant_id, message, payload)
+
+    def _handle_warmup(self, tenant_id: str, payload: dict):
+        """Handle warmup action from cron Lambda — report container readiness."""
+        # The container is ready if the HTTP server is up (which it is, since we're
+        # handling this request). Check if workspace assembly succeeds.
+        try:
+            _ensure_workspace_assembled(tenant_id)
+            self._respond(200, {"status": "ready"})
+        except Exception as e:
+            logger.warning("Warmup assembly failed for %s: %s", tenant_id, e)
+            self._respond(200, {"status": "initializing"})
+
+    def _handle_cron(self, tenant_id: str, payload: dict):
+        """Handle cron action — execute scheduled task via openclaw agent."""
+        message = validate_message(
+            payload.get("prompt") or payload.get("message") or str(payload)
+        )
+        if not message:
+            self._respond(400, {"error": "Missing message in cron payload"})
+            return
+
+        logger.info("Cron invocation tenant_id=%s message_len=%d", tenant_id, len(message))
+        # Delegate to the regular invocation handler — it handles workspace assembly,
+        # guardrails, openclaw CLI execution, usage logging, etc.
         self._handle_invocation(tenant_id, message, payload)
 
     def _handle_invocation(self, tenant_id: str, message: str, payload: dict):

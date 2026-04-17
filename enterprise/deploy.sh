@@ -198,6 +198,10 @@ ECS_SUBNET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --reg
   --query 'Stacks[0].Outputs[?OutputKey==`AlwaysOnSubnetId`].OutputValue' --output text)
 EFS_ID=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" \
   --query 'Stacks[0].Outputs[?OutputKey==`AlwaysOnEFSId`].OutputValue' --output text)
+CRON_LAMBDA_ARN=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" \
+  --query 'Stacks[0].Outputs[?OutputKey==`CronLambdaArn`].OutputValue' --output text 2>/dev/null || echo "")
+CRON_SCHEDULER_ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" \
+  --query 'Stacks[0].Outputs[?OutputKey==`CronSchedulerRoleArn`].OutputValue' --output text 2>/dev/null || echo "")
 
 success "Stack ready — EC2: $INSTANCE_ID | S3: $S3_BUCKET"
 
@@ -311,7 +315,9 @@ if [ -n "$EXISTING_RUNTIME" ] && [ "$EXISTING_RUNTIME" != "UNKNOWN" ]; then
     --lifecycle-configuration '{"idleRuntimeSessionTimeout":300,"maxLifetime":3600}' \
     --environment-variables \
       STACK_NAME="${STACK_NAME}",AWS_REGION="${REGION}",S3_BUCKET="${S3_BUCKET}",\
-BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}" \
+BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}",\
+EVENTBRIDGE_SCHEDULE_GROUP="openclaw-cron",CRON_LAMBDA_ARN="${CRON_LAMBDA_ARN}",\
+EVENTBRIDGE_ROLE_ARN="${CRON_SCHEDULER_ROLE_ARN}",IDENTITY_TABLE_NAME="${DYNAMODB_TABLE}" \
     --region "$REGION" &>/dev/null || warn "  Runtime update failed — may need manual update in console"
   RUNTIME_ID="$EXISTING_RUNTIME"
 else
@@ -325,7 +331,9 @@ else
     --lifecycle-configuration '{"idleRuntimeSessionTimeout":300,"maxLifetime":3600}' \
     --environment-variables \
       STACK_NAME="${STACK_NAME}",AWS_REGION="${REGION}",S3_BUCKET="${S3_BUCKET}",\
-BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}" \
+BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}",\
+EVENTBRIDGE_SCHEDULE_GROUP="openclaw-cron",CRON_LAMBDA_ARN="${CRON_LAMBDA_ARN}",\
+EVENTBRIDGE_ROLE_ARN="${CRON_SCHEDULER_ROLE_ARN}",IDENTITY_TABLE_NAME="${DYNAMODB_TABLE}" \
     --region "$REGION" \
     --query 'agentRuntimeId' --output text)
 
@@ -539,6 +547,53 @@ fi
 
 success "Templates uploaded to s3://${S3_BUCKET}/"
 
+# ── Step 5.5: Deploy Cron Lambda code ────────────────────────────────────────
+if [ -n "$CRON_LAMBDA_ARN" ] && [ "$CRON_LAMBDA_ARN" != "None" ]; then
+  info "[5.5/8] Deploying Cron Lambda code..."
+  CRON_LAMBDA_DIR="$SCRIPT_DIR/lambda/cron"
+  if [ -f "$CRON_LAMBDA_DIR/index.py" ]; then
+    CRON_ZIP="/tmp/cron-lambda-$$.zip"
+    (cd "$CRON_LAMBDA_DIR" && zip -q "$CRON_ZIP" index.py)
+    CRON_FUNCTION_NAME="${STACK_NAME}-cron-executor"
+
+    # Read AGENTCORE_RUNTIME_ARN from SSM (runtime-id → ARN)
+    AGENTCORE_RUNTIME_ARN="arn:aws:bedrock-agentcore:${REGION}:${ACCOUNT_ID}:runtime/${RUNTIME_ID}"
+
+    # Update Lambda code
+    aws lambda update-function-code \
+      --function-name "$CRON_FUNCTION_NAME" \
+      --zip-file "fileb://$CRON_ZIP" \
+      --region "$REGION" &>/dev/null \
+      && success "  Cron Lambda code deployed" \
+      || warn "  Cron Lambda code update failed"
+
+    # Wait for update to complete before updating config
+    aws lambda wait function-updated \
+      --function-name "$CRON_FUNCTION_NAME" \
+      --region "$REGION" 2>/dev/null || sleep 5
+
+    # Update Lambda environment variables
+    aws lambda update-function-configuration \
+      --function-name "$CRON_FUNCTION_NAME" \
+      --environment "Variables={DYNAMODB_TABLE=${DYNAMODB_TABLE},AWS_REGION=${REGION},AGENTCORE_RUNTIME_ARN=${AGENTCORE_RUNTIME_ARN},AGENTCORE_QUALIFIER=DEFAULT,LAMBDA_TIMEOUT_SECONDS=600}" \
+      --region "$REGION" &>/dev/null \
+      && success "  Cron Lambda config updated" \
+      || warn "  Cron Lambda config update failed"
+
+    # Store cron config in SSM for container env derivation
+    aws ssm put-parameter --name "/openclaw/${STACK_NAME}/cron/lambda-arn" \
+      --value "$CRON_LAMBDA_ARN" --type String --overwrite --region "$REGION" &>/dev/null
+    aws ssm put-parameter --name "/openclaw/${STACK_NAME}/cron/scheduler-role-arn" \
+      --value "$CRON_SCHEDULER_ROLE_ARN" --type String --overwrite --region "$REGION" &>/dev/null
+
+    rm -f "$CRON_ZIP"
+  else
+    warn "  lambda/cron/index.py not found — skipping cron Lambda deploy"
+  fi
+else
+  info "[5.5/8] Cron Lambda not found in stack outputs — skipping (run CloudFormation update first)"
+fi
+
 # ── Step 6: DynamoDB table + Seed ─────────────────────────────────────────────
 # Create table if it doesn't exist (idempotent — no-op if already created)
 TABLE_STATUS=$(aws dynamodb describe-table --table-name "$DYNAMODB_TABLE" \
@@ -670,6 +725,8 @@ ECS_TASK_SG=${ECS_TASK_SG}
 ECS_SUBNET=${ECS_SUBNET}
 EFS_ID=${EFS_ID}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
+CRON_LAMBDA_ARN=${CRON_LAMBDA_ARN}
+CRON_SCHEDULER_ROLE_ARN=${CRON_SCHEDULER_ROLE_ARN}
 ENVEOF
 aws s3 cp "$ENV_TMPFILE" "s3://${S3_BUCKET}/_deploy/env" --region "$REGION" --quiet
 rm -f "$ENV_TMPFILE"

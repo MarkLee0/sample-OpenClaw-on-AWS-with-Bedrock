@@ -32,6 +32,10 @@
       }
     }
   },
+  "tools": {
+    "profile": "full",
+    "deny": ["cron", "gateway"]
+  },
   "gateway": {
     "port": 18789,
     "mode": "local",
