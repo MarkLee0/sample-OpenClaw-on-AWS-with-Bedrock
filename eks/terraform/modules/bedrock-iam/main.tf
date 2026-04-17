@@ -108,6 +108,58 @@ resource "aws_iam_role_policy_attachment" "openclaw_bedrock_secrets" {
 }
 
 # -----------------------------------------------------------------------------
+# Backup: S3 IAM role + dedicated ServiceAccount + Pod Identity
+# Used by spec.backup.serviceAccountName in OpenClawInstance CRD
+# -----------------------------------------------------------------------------
+resource "aws_iam_policy" "openclaw_backup" {
+  name_prefix = "${var.name}-backup-"
+  tags        = var.tags
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"]
+      Resource = ["*"]
+    }]
+  })
+}
+
+resource "aws_iam_role" "openclaw_backup" {
+  name_prefix = "${var.name}-backup-"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "pods.eks.${var.is_china_region ? "amazonaws.com.cn" : "amazonaws.com"}" }
+      Action    = ["sts:AssumeRole", "sts:TagSession"]
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "openclaw_backup" {
+  role       = aws_iam_role.openclaw_backup.name
+  policy_arn = aws_iam_policy.openclaw_backup.arn
+}
+
+resource "kubernetes_service_account_v1" "openclaw_backup" {
+  metadata {
+    name      = "openclaw-backup"
+    namespace = kubernetes_namespace_v1.openclaw.metadata[0].name
+  }
+}
+
+resource "aws_eks_pod_identity_association" "openclaw_backup" {
+  cluster_name    = var.cluster_name
+  namespace       = kubernetes_namespace_v1.openclaw.metadata[0].name
+  service_account = kubernetes_service_account_v1.openclaw_backup.metadata[0].name
+  role_arn        = aws_iam_role.openclaw_backup.arn
+}
+
+# -----------------------------------------------------------------------------
 # Kubernetes ServiceAccount with IRSA Annotation
 # -----------------------------------------------------------------------------
 resource "kubernetes_service_account_v1" "openclaw_sandbox" {
