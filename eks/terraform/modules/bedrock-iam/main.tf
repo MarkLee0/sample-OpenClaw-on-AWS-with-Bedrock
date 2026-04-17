@@ -5,6 +5,8 @@
 # using IRSA (IAM Roles for Service Accounts) for secure pod-level credentials.
 ################################################################################
 
+data "aws_caller_identity" "current" {}
+
 # -----------------------------------------------------------------------------
 # Kubernetes Namespace
 # -----------------------------------------------------------------------------
@@ -68,26 +70,39 @@ resource "aws_iam_policy" "secrets_access" {
 
 # -----------------------------------------------------------------------------
 # IRSA Role for OpenClaw Bedrock Access
+# Workshop: trust policy allows any service account from this cluster
+# (no sub condition) so operator-created SAs can assume the role directly.
 # -----------------------------------------------------------------------------
-module "openclaw_bedrock_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "~> 5.0"
+resource "aws_iam_role" "openclaw_bedrock" {
+  name_prefix = "${var.name}-bedrock-"
 
-  role_name_prefix = "${var.name}-bedrock-"
-
-  role_policy_arns = {
-    bedrock = aws_iam_policy.bedrock_access.arn
-    secrets = aws_iam_policy.secrets_access.arn
-  }
-
-  oidc_providers = {
-    main = {
-      provider_arn               = var.oidc_provider_arn
-      namespace_service_accounts = ["${var.openclaw_namespace}:*"]
-    }
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = var.oidc_provider_arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${replace(var.oidc_provider_arn, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/", "")}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
 
   tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "openclaw_bedrock_bedrock" {
+  role       = aws_iam_role.openclaw_bedrock.name
+  policy_arn = aws_iam_policy.bedrock_access.arn
+}
+
+resource "aws_iam_role_policy_attachment" "openclaw_bedrock_secrets" {
+  role       = aws_iam_role.openclaw_bedrock.name
+  policy_arn = aws_iam_policy.secrets_access.arn
 }
 
 # -----------------------------------------------------------------------------
@@ -98,7 +113,7 @@ resource "kubernetes_service_account_v1" "openclaw_sandbox" {
     name      = "openclaw-sandbox"
     namespace = kubernetes_namespace_v1.openclaw.metadata[0].name
     annotations = {
-      "eks.amazonaws.com/role-arn" = module.openclaw_bedrock_irsa.iam_role_arn
+      "eks.amazonaws.com/role-arn" = aws_iam_role.openclaw_bedrock.arn
     }
   }
 }

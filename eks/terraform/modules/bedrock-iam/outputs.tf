@@ -4,7 +4,7 @@
 
 output "bedrock_role_arn" {
   description = "ARN of the IAM role for OpenClaw Bedrock access (used by IRSA)"
-  value       = module.openclaw_bedrock_irsa.iam_role_arn
+  value       = aws_iam_role.openclaw_bedrock.arn
 }
 
 output "service_account_name" {
