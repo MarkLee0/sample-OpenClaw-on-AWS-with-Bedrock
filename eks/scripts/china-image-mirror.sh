@@ -29,9 +29,10 @@ set -euo pipefail
 #   --platform    Target platform (e.g. linux/arm64) for cross-arch pulls
 #
 # Prerequisites:
-#   - Docker running locally
+#   - Docker running locally (with buildx)
 #   - Helm >= 3.12 installed
 #   - AWS CLI configured (with --profile for China)
+#   - jq installed (for manifest platform inspection)
 #   - Internet access to ghcr.io, quay.io, Docker Hub, registry.k8s.io
 # =============================================================================
 
@@ -51,7 +52,7 @@ PLATFORM=""
 OPERATOR_VERSION="0.26.2"
 # OpenClaw version — pin to a known stable release (latest may have regressions)
 # Override via env: OPENCLAW_VERSION=2026.4.5 bash china-image-mirror.sh ...
-OPENCLAW_VERSION="${OPENCLAW_VERSION:-2026.4.2}"
+OPENCLAW_VERSION="${OPENCLAW_VERSION:-2026.4.14}"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -99,13 +100,12 @@ MIRROR_IMAGES=(
   # Core — always needed for OpenClawInstance pods
   "ghcr.io/openclaw/openclaw:${OPENCLAW_VERSION}|openclaw/openclaw:${OPENCLAW_VERSION}"
   "ghcr.io/astral-sh/uv:0.6-bookworm-slim|astral-sh/uv:0.6-bookworm-slim"
-  "busybox:1.37|library/busybox:1.37"
-  "nginx:1.27-alpine|library/nginx:1.27-alpine"
+  "busybox:1.37|busybox:1.37"
+  "nginx:1.27-alpine|nginx:1.27-alpine"
   "otel/opentelemetry-collector:0.120.0|otel/opentelemetry-collector:0.120.0"
   # Sidecars — needed when enabled in CRD spec
   "chromedp/headless-shell:stable|chromedp/headless-shell:stable"
   "ghcr.io/tailscale/tailscale:latest|tailscale/tailscale:latest"
-  "ollama/ollama:latest|ollama/ollama:latest"
   "tsl0922/ttyd:latest|tsl0922/ttyd:latest"
   # Backup/restore — needed when spec.backup is configured
   "rclone/rclone:1.68|rclone/rclone:1.68"
@@ -116,8 +116,13 @@ MIRROR_IMAGES=(
   # ── Kata Containers (optional: enable_kata) ──
   "quay.io/kata-containers/kata-deploy:3.27.0|kata-containers/kata-deploy:3.27.0"
 
+  # ── Agent Sandbox (optional: enable_agent_sandbox) ──
+  "registry.k8s.io/agent-sandbox/agent-sandbox-controller:v0.3.10|agent-sandbox/agent-sandbox-controller:v0.3.10"
+
   # ── LiteLLM (optional: enable_litellm) ──
-  "docker.litellm.ai/berriai/litellm:main-latest|berriai/litellm:main-latest"
+  "ghcr.io/berriai/litellm:main-latest|berriai/litellm:main-latest"              # enable_db=false (default)
+  "ghcr.io/berriai/litellm-database:main-latest|berriai/litellm-database:main-latest"  # enable_db=true
+  "docker.io/bitnami/postgresql:latest|bitnami/postgresql:latest"               # enable_db=true only
 
   # ── Monitoring stack (optional: enable_monitoring) ──
   # Grafana
@@ -129,8 +134,70 @@ MIRROR_IMAGES=(
   "quay.io/prometheus-operator/prometheus-config-reloader:v0.77.1|prometheus-operator/prometheus-config-reloader:v0.77.1"
   "registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6|ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6"
   "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0|kube-state-metrics/kube-state-metrics:v2.13.0"
-  "quay.io/prometheus/node-exporter:1.8.2|prometheus/node-exporter:1.8.2"
+  "quay.io/prometheus/node-exporter:v1.8.2|prometheus/node-exporter:v1.8.2"
 )
+
+# ── Platform resolution ──────────────────────────────────────
+# When --platform is specified, inspect the image manifest to find the best
+# matching platform. Handles variant mismatches, e.g.:
+#   requested: linux/arm64  →  manifest has: linux/arm64/v8  →  use linux/arm64/v8
+#   requested: linux/arm64  →  manifest has: linux/amd64 only →  FAIL (no compatible arch)
+#
+# Usage: RESOLVED=$(resolve_platform "image:tag" "linux/arm64") || handle_error
+# Returns: the resolved platform string on stdout, exit 0 on match, exit 1 on no match
+resolve_platform() {
+  local src="$1" requested="$2"
+  [[ -z "$requested" ]] && return 0
+
+  local req_os req_arch req_variant
+  IFS='/' read -r req_os req_arch req_variant <<< "$requested"
+
+  # Inspect the manifest index
+  local manifest
+  manifest=$(docker buildx imagetools inspect --raw "$src" 2>/dev/null) || {
+    # Cannot inspect (auth, single-arch, etc.) — use requested as-is
+    echo "$requested"
+    return 0
+  }
+
+  # Extract available platforms as "os/arch" or "os/arch/variant"
+  local platforms
+  platforms=$(echo "$manifest" | jq -r '
+    if .manifests then
+      .manifests[] |
+      select(.platform.os != null and .platform.architecture != null) |
+      "\(.platform.os)/\(.platform.architecture)" +
+      (if .platform.variant and (.platform.variant | length) > 0
+       then "/\(.platform.variant)" else "" end)
+    elif .mediaType then
+      # Single-arch image (not a manifest list)
+      empty
+    else empty end
+  ' 2>/dev/null)
+
+  # If no platform list (single-arch image), use requested as-is
+  if [[ -z "$platforms" ]]; then
+    echo "$requested"
+    return 0
+  fi
+
+  # 1) Exact match
+  if echo "$platforms" | grep -qxF "$requested"; then
+    echo "$requested"
+    return 0
+  fi
+
+  # 2) Same os + arch, any variant (e.g. linux/arm64 matches linux/arm64/v8)
+  local match
+  match=$(echo "$platforms" | grep -E "^${req_os}/${req_arch}(/|$)" | head -1)
+  if [[ -n "$match" ]]; then
+    echo "$match"
+    return 0
+  fi
+
+  # 3) No compatible platform found
+  return 1
+}
 
 info "Mirroring ${#MIRROR_IMAGES[@]} container images to ECR..."
 echo ""
@@ -165,23 +232,44 @@ for entry in "${MIRROR_IMAGES[@]}"; do
     fi
   fi
 
-  # Pull (with optional platform override)
-  PULL_ARGS=""
-  [[ -n "$PLATFORM" ]] && PULL_ARGS="--platform $PLATFORM"
-  if ! docker pull $PULL_ARGS "$SRC" > /dev/null 2>&1; then
-    echo -e "${RED}PULL FAILED${NC}"
-    MIRROR_FAIL=$((MIRROR_FAIL + 1))
-    continue
+  # Multi-arch: mirror only linux/amd64 + linux/arm64 (skip s390x, ppc64le, etc.)
+  PUSH_OK=false
+  MANIFEST_RAW=$(docker buildx imagetools inspect --raw "$SRC" 2>/dev/null || true)
+  if [[ -n "$MANIFEST_RAW" ]] && echo "$MANIFEST_RAW" | jq -e '.manifests' > /dev/null 2>&1; then
+    # Source has a manifest list — filter to amd64 + arm64 only
+    AMEND_ARGS=""
+    # amd64: exact match
+    DIGEST=$(echo "$MANIFEST_RAW" | jq -r '.manifests[] | select(.platform.os=="linux" and .platform.architecture=="amd64") | .digest' 2>/dev/null | head -1)
+    [[ -n "$DIGEST" && "$DIGEST" != "null" ]] && AMEND_ARGS="$AMEND_ARGS ${SRC}@${DIGEST}"
+    # arm64: match any variant (arm64, arm64/v8, etc.)
+    DIGEST=$(echo "$MANIFEST_RAW" | jq -r '.manifests[] | select(.platform.os=="linux" and .platform.architecture=="arm64") | .digest' 2>/dev/null | head -1)
+    [[ -n "$DIGEST" && "$DIGEST" != "null" ]] && AMEND_ARGS="$AMEND_ARGS ${SRC}@${DIGEST}"
+    if [[ -n "$AMEND_ARGS" ]]; then
+      if docker buildx imagetools create --tag "$DST" $AMEND_ARGS > /dev/null 2>&1; then
+        echo -e "${GREEN}PUSHED (amd64+arm64)${NC}"
+        MIRROR_PUSH=$((MIRROR_PUSH + 1))
+        PUSH_OK=true
+      fi
+    fi
   fi
 
-  # Tag + push
-  docker tag "$SRC" "$DST"
-  if docker push "$DST" > /dev/null 2>&1; then
-    echo -e "${GREEN}PUSHED${NC}"
-    MIRROR_PUSH=$((MIRROR_PUSH + 1))
-  else
-    echo -e "${RED}PUSH FAILED${NC}"
-    MIRROR_FAIL=$((MIRROR_FAIL + 1))
+  if ! $PUSH_OK; then
+    # Fallback: single-arch pull+tag+push (for images without manifest list)
+    PULL_ARGS=""
+    [[ -n "$PLATFORM" ]] && PULL_ARGS="--platform $PLATFORM"
+    if ! docker pull $PULL_ARGS "$SRC" > /dev/null 2>&1; then
+      echo -e "${RED}PULL FAILED${NC}"
+      MIRROR_FAIL=$((MIRROR_FAIL + 1))
+      continue
+    fi
+    docker tag "$SRC" "$DST"
+    if docker push "$DST" > /dev/null 2>&1; then
+      echo -e "${GREEN}PUSHED${NC}"
+      MIRROR_PUSH=$((MIRROR_PUSH + 1))
+    else
+      echo -e "${RED}PUSH FAILED${NC}"
+      MIRROR_FAIL=$((MIRROR_FAIL + 1))
+    fi
   fi
 done
 
@@ -198,13 +286,17 @@ fi
 MIRROR_OCI_CHARTS=(
   # Required — OpenClaw Operator (always deployed)
   "oci://ghcr.io/openclaw-rocks/charts|openclaw-operator|${OPERATOR_VERSION}"
-  # Optional — uncomment if using these Terraform modules in China:
-  # "oci://ghcr.io/kata-containers/kata-deploy-charts|kata-deploy|3.27.0"
-  # "oci://ghcr.io/berriai/litellm-helm|litellm-helm|"
+  # Kata Containers (optional: enable_kata)
+  "oci://ghcr.io/kata-containers/kata-deploy-charts|kata-deploy|3.27.0"
+  # LiteLLM (optional: enable_litellm)
+  "oci://ghcr.io/berriai|litellm-helm|0.1.812"
+  # Bitnami PostgreSQL (LiteLLM subchart, only needed when enable_db=true)
+  "oci://registry-1.docker.io/bitnamicharts|postgresql|18.5.10"
 )
 
 # HTTPS-repo charts (monitoring, grafana) — uncomment if needed:
 MIRROR_HTTPS_CHARTS=(
+  "eks|https://aws.github.io/eks-charts|aws-load-balancer-controller"
   # "prometheus-community|https://prometheus-community.github.io/helm-charts|kube-prometheus-stack|65.1.0"
   # "grafana|https://grafana.github.io/helm-charts|grafana|"
 )

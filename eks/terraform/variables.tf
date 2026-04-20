@@ -70,7 +70,7 @@ variable "enable_kata" {
 variable "kata_hypervisor" {
   description = "Kata hypervisor type"
   type        = string
-  default     = "qemu"
+  default     = "fc"
   validation {
     condition     = contains(["qemu", "fc", "clh"], var.kata_hypervisor)
     error_message = "Hypervisor must be qemu, fc, or clh."
@@ -93,7 +93,7 @@ variable "enable_karpenter" {
 variable "enable_alb_controller" {
   description = "Enable AWS Load Balancer Controller for ALB Ingress"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_cloudfront" {
@@ -137,8 +137,4 @@ variable "access_entries" {
   default     = {}
 }
 
-variable "kms_key_admin_roles" {
-  description = "List of IAM Role ARNs for KMS key administration"
-  type        = list(string)
-  default     = []
-}
+# kms_key_admin_roles removed — KMS encryption disabled for workshop

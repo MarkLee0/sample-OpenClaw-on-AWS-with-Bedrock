@@ -18,14 +18,18 @@ resource "random_password" "master_key" {
 }
 
 resource "random_password" "db_password" {
+  count   = var.enable_db ? 1 : 0
   length  = 32
   special = false
 }
 
 resource "random_password" "db_admin_password" {
+  count   = var.enable_db ? 1 : 0
   length  = 32
   special = false
 }
+
+
 
 ################################################################################
 # Namespace + Service Account
@@ -63,6 +67,8 @@ resource "aws_iam_policy" "litellm_bedrock" {
       Action = [
         "bedrock:InvokeModel",
         "bedrock:InvokeModelWithResponseStream",
+        "aws-marketplace:ViewSubscriptions",
+        "aws-marketplace:Subscribe",
       ]
       Resource = "*"
     }]
@@ -110,6 +116,7 @@ resource "aws_eks_pod_identity_association" "litellm" {
 ################################################################################
 
 resource "helm_release" "litellm" {
+  force_update = true
   name       = "litellm"
   repository = var.chart_repository != "" ? var.chart_repository : "oci://ghcr.io/berriai"
   chart      = "litellm-helm"
@@ -128,15 +135,10 @@ resource "helm_release" "litellm" {
     value = kubernetes_service_account_v1.litellm.metadata[0].name
   }
 
-  # Container image — upstream: docker.litellm.ai/berriai/litellm
+  # Container image — controlled by enable_db toggle (see DB mode section below)
   set {
     name  = "image.tag"
     value = "main-latest"
-  }
-
-  set {
-    name  = "image.repository"
-    value = var.ecr_host != "" ? "${var.ecr_host}/berriai/litellm" : "docker.litellm.ai/berriai/litellm"
   }
 
   # ------------------------------------------------------------------
@@ -144,62 +146,52 @@ resource "helm_release" "litellm" {
   # ------------------------------------------------------------------
   set_sensitive {
     name  = "envVars.LITELLM_MASTER_KEY"
-    value = random_password.master_key.result
+    value = "sk-${random_password.master_key.result}"
   }
 
   # ------------------------------------------------------------------
-  # PostgreSQL backend (bitnami sub-chart, deployed alongside LiteLLM)
+  # DB mode toggle
+  # enable_db=false (default): stateless config-only, lighter image, no PG
+  # enable_db=true: PostgreSQL sidecar, virtual key management enabled
   # ------------------------------------------------------------------
   set {
+    name  = "image.repository"
+    value = var.enable_db ? (var.ecr_host != "" ? "${var.ecr_host}/berriai/litellm-database" : "ghcr.io/berriai/litellm-database") : (var.ecr_host != "" ? "${var.ecr_host}/berriai/litellm" : "ghcr.io/berriai/litellm")
+  }
+
+  # db.deployStandalone=false: we deploy PostgreSQL ourselves via helm_release.postgresql
+  set {
     name  = "db.deployStandalone"
-    value = "true"
+    value = "false"
+  }
+
+  set {
+    name  = "db.useExisting"
+    value = var.enable_db ? "true" : "false"
+  }
+
+  dynamic "set" {
+    for_each = var.enable_db ? [1] : []
+    content {
+      name  = "db.endpoint"
+      value = "litellm-postgresql.${kubernetes_namespace_v1.litellm.metadata[0].name}.svc"
+    }
   }
 
   set {
     name  = "envVars.STORE_MODEL_IN_DB"
-    value = "True"
+    value = var.enable_db ? "True" : "False"
   }
 
-  set {
-    name  = "proxy_config.general_settings.database_url"
-    value = "os.environ/DATABASE_URL"
+  dynamic "set" {
+    for_each = var.enable_db ? [1] : []
+    content {
+      name  = "db.secret.name"
+      value = kubernetes_secret_v1.litellm_db_creds[0].metadata[0].name
+    }
   }
 
-  set {
-    name  = "db.url"
-    value = "postgresql://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOST)/$(DATABASE_NAME)"
-  }
-
-  set {
-    name  = "global.security.allowInsecureImages"
-    value = "true"
-  }
-
-  # PostgreSQL image from public ECR mirror
-  set {
-    name  = "postgresql.image.registry"
-    value = "public.ecr.aws"
-  }
-
-  set {
-    name  = "postgresql.image.repository"
-    value = "bitnami/postgresql"
-  }
-
-  set {
-    name  = "postgresql.image.tag"
-    value = "latest"
-  }
-
-  set_sensitive {
-    name  = "postgresql.auth.password"
-    value = random_password.db_password.result
-  }
-
-  set_sensitive {
-    name  = "postgresql.auth.postgres-password"
-    value = random_password.db_admin_password.result
-  }
+  depends_on = [helm_release.postgresql]
 
   # ------------------------------------------------------------------
   # Default model: Claude Sonnet 4.5 via AWS Bedrock
@@ -223,14 +215,16 @@ resource "helm_release" "litellm" {
     value = "true"
   }
 
-  # Enable Prometheus metrics callback
-  set {
-    name  = "proxy_config.litellm_settings.callbacks[0]"
-    value = "prometheus"
+  # Prometheus metrics callback — only enable when Prometheus is deployed
+  dynamic "set" {
+    for_each = var.enable_monitoring ? [1] : []
+    content {
+      name  = "proxy_config.litellm_settings.callbacks[0]"
+      value = "prometheus"
+    }
   }
 
-  # Disable built-in ServiceMonitor -- we create a custom one below with
-  # the correct scrape path.
+  # Always disable built-in ServiceMonitor (we create our own when needed)
   set {
     name  = "serviceMonitor.enabled"
     value = "false"
@@ -238,10 +232,75 @@ resource "helm_release" "litellm" {
 }
 
 ################################################################################
-# ServiceMonitor for Prometheus scraping
+# DB credentials Secret (only when enable_db = true)
+# Chart expects Secret with 'username' + 'password' keys (db.secret.name)
+################################################################################
+
+resource "kubernetes_secret_v1" "litellm_db_creds" {
+  count = var.enable_db ? 1 : 0
+
+  metadata {
+    name      = "litellm-db-creds"
+    namespace = kubernetes_namespace_v1.litellm.metadata[0].name
+  }
+
+  data = {
+    username = "litellm"
+    password = random_password.db_password[0].result
+  }
+}
+
+################################################################################
+# PostgreSQL (only when enable_db = true)
+# Deployed as a standalone helm_release so the chart source is fully controlled
+# (supports ECR mirror for China). LiteLLM connects via db.useExisting=true.
+################################################################################
+
+resource "helm_release" "postgresql" {
+  count      = var.enable_db ? 1 : 0
+  name       = "litellm-postgresql"
+  repository = var.chart_repository != "" ? "${var.chart_repository}/charts" : "oci://registry-1.docker.io/bitnamicharts"
+  chart      = "postgresql"
+  version    = "18.5.10"
+  namespace  = kubernetes_namespace_v1.litellm.metadata[0].name
+
+  set {
+    name  = "auth.username"
+    value = "litellm"
+  }
+
+  set {
+    name  = "auth.database"
+    value = "litellm"
+  }
+
+  set_sensitive {
+    name  = "auth.password"
+    value = random_password.db_password[0].result
+  }
+
+  set_sensitive {
+    name  = "auth.postgresPassword"
+    value = random_password.db_admin_password[0].result
+  }
+
+  set {
+    name  = "primary.persistence.storageClass"
+    value = "ebs-sc"
+  }
+
+  set {
+    name  = "image.registry"
+    value = var.ecr_host != "" ? var.ecr_host : "docker.io"
+  }
+}
+
+################################################################################
+# ServiceMonitor for Prometheus scraping (only when enable_monitoring = true)
 ################################################################################
 
 resource "kubectl_manifest" "litellm_servicemonitor" {
+  count = var.enable_monitoring ? 1 : 0
   yaml_body = yamlencode({
     apiVersion = "monitoring.coreos.com/v1"
     kind       = "ServiceMonitor"

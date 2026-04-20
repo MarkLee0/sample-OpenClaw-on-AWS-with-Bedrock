@@ -45,8 +45,6 @@ module "eks_cluster" {
       }
     }
   })
-  kms_key_admin_roles = var.kms_key_admin_roles
-
   is_china_region = local.is_china_region
   partition       = local.partition
 
@@ -66,6 +64,8 @@ module "storage" {
   partition       = local.partition
 
   tags = local.tags
+
+  depends_on = [module.eks_cluster]
 }
 
 # =============================================================================
@@ -85,6 +85,8 @@ module "bedrock_iam" {
   partition       = local.partition
 
   tags = local.tags
+
+  depends_on = [module.eks_cluster]
 }
 
 # =============================================================================
@@ -188,10 +190,11 @@ module "litellm" {
   cluster_oidc_issuer = module.eks_cluster.oidc_issuer
   oidc_provider_arn   = module.eks_cluster.oidc_provider_arn
 
-  chart_repository = local.chart_repository
-  ecr_host         = local.is_china_region ? local.ecr_host : ""
-  is_china_region  = local.is_china_region
-  partition        = local.partition
+  chart_repository  = local.chart_repository
+  ecr_host          = local.is_china_region ? local.ecr_host : ""
+  is_china_region   = local.is_china_region
+  partition         = local.partition
+  enable_monitoring = var.enable_monitoring
 
   tags = local.tags
 

@@ -34,6 +34,11 @@ resource "helm_release" "openclaw_operator" {
     value = "true"
   }
 
+  set {
+    name = "image.pullPolicy"
+    value = "Always"
+  }
+
   # For China region, use private ECR mirror (populated by china-image-mirror.sh)
   dynamic "set" {
     for_each = var.ecr_host != "" ? [1] : []

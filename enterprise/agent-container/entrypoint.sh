@@ -284,6 +284,7 @@ fi
 # =============================================================================
 export OPENCLAW_WORKSPACE="$WORKSPACE"
 export OPENCLAW_SKIP_ONBOARDING=1
+export OPENCLAW_SKIP_CRON=1  # Disable built-in cron — EventBridge handles scheduling
 
 python /app/server.py &
 SERVER_PID=$!

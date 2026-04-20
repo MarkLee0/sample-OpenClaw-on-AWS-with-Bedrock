@@ -23,11 +23,8 @@ module "eks" {
   vpc_id     = var.vpc_id
   subnet_ids = var.subnet_ids
 
-  kms_key_administrators = distinct(concat(
-    ["arn:${var.partition}:iam::${data.aws_caller_identity.current.account_id}:root"],
-    var.kms_key_admin_roles,
-    [data.aws_iam_session_context.current.issuer_arn]
-  ))
+  create_kms_key           = false
+  cluster_encryption_config = {}
 
   cluster_security_group_additional_rules = {
     ingress_nodes_ephemeral_ports_tcp = {
@@ -54,6 +51,7 @@ module "eks" {
   eks_managed_node_group_defaults = {
     iam_role_additional_policies = {
       AmazonSSMManagedInstanceCore = "arn:${var.partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      AmazonEFSCSIDriverPolicy     = "arn:${var.partition}:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy"
     }
 
     ebs_optimized = true
@@ -94,6 +92,16 @@ module "eks" {
   }
 
   cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+      pod_identity_association = [{
+        role_arn        = aws_iam_role.vpc_cni.arn
+        service_account = "aws-node"
+      }]
+    }
     eks-pod-identity-agent = {
       most_recent = true
     }
@@ -117,11 +125,40 @@ module "eks" {
 }
 
 ################################################################################
+# VPC CNI - Pod Identity IAM Role
+################################################################################
+
+resource "aws_iam_role" "vpc_cni" {
+  name_prefix = "${var.name}-vpc-cni-"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "pods.eks.amazonaws.com"
+      }
+      Action = [
+        "sts:AssumeRole",
+        "sts:TagSession"
+      ]
+    }]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "vpc_cni" {
+  role       = aws_iam_role.vpc_cni.name
+  policy_arn = "arn:${var.partition}:iam::aws:policy/AmazonEKS_CNI_Policy"
+}
+
+################################################################################
 # EBS CSI Driver - Pod Identity IAM Role
 ################################################################################
 
 resource "aws_iam_role" "ebs_csi" {
-  name = "${var.name}-ebs-csi-driver"
+  name_prefix = "${var.name}-ebs-csi-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -150,7 +187,7 @@ resource "aws_iam_role_policy_attachment" "ebs_csi" {
 ################################################################################
 
 resource "aws_iam_role" "efs_csi" {
-  name = "${var.name}-efs-csi-driver"
+  name_prefix = "${var.name}-efs-csi-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

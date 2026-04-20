@@ -2,6 +2,8 @@
 
 **Full documentation:** **[README_ENTERPRISE.md](../README_ENTERPRISE.md)**
 
+**[Interactive UI Guide](https://aws-samples.github.io/sample-OpenClaw-on-AWS-with-Bedrock/ui-guide.html)** — 25-page bilingual documentation covering architecture design, every admin and portal page, deployment guide, and platform screenshots. Start here to understand what the platform does and how to use it.
+
 ---
 
 ## Quick Start
@@ -18,6 +20,7 @@ Then follow Steps 4-6 in [README_ENTERPRISE.md](../README_ENTERPRISE.md) to depl
 
 | Resource | Path |
 |----------|------|
+| Interactive UI Guide | [ui-guide.html](https://aws-samples.github.io/sample-OpenClaw-on-AWS-with-Bedrock/ui-guide.html) |
 | Full documentation | [README_ENTERPRISE.md](../README_ENTERPRISE.md) |
 | CloudFormation template | [clawdbot-bedrock-agentcore-multitenancy.yaml](clawdbot-bedrock-agentcore-multitenancy.yaml) |
 | Environment registry | [docs/environments.md](docs/environments.md) |

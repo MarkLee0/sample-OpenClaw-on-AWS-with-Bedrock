@@ -151,13 +151,28 @@ CFN_PARAMS="$CFN_PARAMS ParameterKey=CreateVPCEndpoints,ParameterValue=${CREATE_
 CFN_PARAMS="$CFN_PARAMS ParameterKey=ExistingVpcId,ParameterValue=${EXISTING_VPC_ID}"
 CFN_PARAMS="$CFN_PARAMS ParameterKey=ExistingSubnetId,ParameterValue=${EXISTING_SUBNET_ID}"
 
-# Upload template to S3 (template > 51200 bytes, too large for --template-body)
-CFN_TEMPLATE="$SCRIPT_DIR/clawdbot-bedrock-agentcore-multitenancy.yaml"
-CFN_S3_BUCKET="openclaw-cfn-templates-${ACCOUNT_ID}-${REGION}"
-aws s3 mb "s3://${CFN_S3_BUCKET}" --region "$REGION" 2>/dev/null || true
-aws s3 cp "$CFN_TEMPLATE" "s3://${CFN_S3_BUCKET}/${STACK_NAME}-template.yaml" --region "$REGION" --quiet
-CFN_TEMPLATE_URL="https://${CFN_S3_BUCKET}.s3.${REGION}.amazonaws.com/${STACK_NAME}-template.yaml"
-info "  Template uploaded to $CFN_S3_BUCKET"
+
+# Template is 70KB — exceeds 51,200 byte inline limit, must use S3
+info "  Uploading CloudFormation template to S3..."
+STAGING_BUCKET="openclaw-deploy-${ACCOUNT_ID}-${REGION}"
+
+if ! aws s3api head-bucket --bucket "$STAGING_BUCKET" 2>/dev/null; then
+  echo "[info]  Creating staging bucket s3://${STAGING_BUCKET}..."
+  if [ "$REGION" = "us-east-1" ]; then
+    aws s3api create-bucket --bucket "$STAGING_BUCKET" --region "$REGION"
+  else
+    aws s3api create-bucket --bucket "$STAGING_BUCKET" --region "$REGION" \
+      --create-bucket-configuration LocationConstraint="$REGION"
+  fi
+  aws s3api put-public-access-block --bucket "$STAGING_BUCKET" \
+    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+fi
+
+aws s3 cp "$SCRIPT_DIR/clawdbot-bedrock-agentcore-multitenancy.yaml" \
+  "s3://${STAGING_BUCKET}/cfn/clawdbot-bedrock-agentcore-multitenancy.yaml" \
+  --region "$REGION" --quiet
+TEMPLATE_URL="https://${STAGING_BUCKET}.s3.${REGION}.amazonaws.com/cfn/clawdbot-bedrock-agentcore-multitenancy.yaml"
+success "  Template uploaded"
 
 # Try to create; if stack exists, do an update instead
 STACK_STATUS=$(aws cloudformation describe-stacks \
@@ -168,7 +183,7 @@ if [ "$STACK_STATUS" = "DOES_NOT_EXIST" ]; then
   info "  Creating new stack (takes ~8 min)..."
   aws cloudformation create-stack \
     --stack-name "$STACK_NAME" \
-    --template-url "$CFN_TEMPLATE_URL" \
+    --template-url "$TEMPLATE_URL" \
     --capabilities CAPABILITY_NAMED_IAM \
     --region "$REGION" \
     --parameters $CFN_PARAMS
@@ -178,7 +193,7 @@ else
   info "  Stack exists ($STACK_STATUS) — updating..."
   aws cloudformation update-stack \
     --stack-name "$STACK_NAME" \
-    --template-url "$CFN_TEMPLATE_URL" \
+    --template-url "$TEMPLATE_URL" \
     --capabilities CAPABILITY_NAMED_IAM \
     --region "$REGION" \
     --parameters $CFN_PARAMS 2>/dev/null && \
@@ -206,6 +221,10 @@ ECS_SUBNET=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --reg
   --query 'Stacks[0].Outputs[?OutputKey==`AlwaysOnSubnetId`].OutputValue' --output text)
 EFS_ID=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" \
   --query 'Stacks[0].Outputs[?OutputKey==`AlwaysOnEFSId`].OutputValue' --output text)
+CRON_LAMBDA_ARN=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" \
+  --query 'Stacks[0].Outputs[?OutputKey==`CronLambdaArn`].OutputValue' --output text 2>/dev/null || echo "")
+CRON_SCHEDULER_ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" \
+  --query 'Stacks[0].Outputs[?OutputKey==`CronSchedulerRoleArn`].OutputValue' --output text 2>/dev/null || echo "")
 
 success "Stack ready — EC2: $INSTANCE_ID | S3: $S3_BUCKET"
 
@@ -319,7 +338,9 @@ if [ -n "$EXISTING_RUNTIME" ] && [ "$EXISTING_RUNTIME" != "UNKNOWN" ]; then
     --lifecycle-configuration '{"idleRuntimeSessionTimeout":300,"maxLifetime":3600}' \
     --environment-variables \
       STACK_NAME="${STACK_NAME}",AWS_REGION="${REGION}",S3_BUCKET="${S3_BUCKET}",\
-BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}" \
+BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}",\
+EVENTBRIDGE_SCHEDULE_GROUP="openclaw-cron",CRON_LAMBDA_ARN="${CRON_LAMBDA_ARN}",\
+EVENTBRIDGE_ROLE_ARN="${CRON_SCHEDULER_ROLE_ARN}",IDENTITY_TABLE_NAME="${DYNAMODB_TABLE}" \
     --region "$REGION" &>/dev/null || warn "  Runtime update failed — may need manual update in console"
   RUNTIME_ID="$EXISTING_RUNTIME"
 else
@@ -333,7 +354,9 @@ else
     --lifecycle-configuration '{"idleRuntimeSessionTimeout":300,"maxLifetime":3600}' \
     --environment-variables \
       STACK_NAME="${STACK_NAME}",AWS_REGION="${REGION}",S3_BUCKET="${S3_BUCKET}",\
-BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}" \
+BEDROCK_MODEL_ID="${MODEL}",DYNAMODB_TABLE="${DYNAMODB_TABLE}",DYNAMODB_REGION="${DYNAMODB_REGION}",\
+EVENTBRIDGE_SCHEDULE_GROUP="openclaw-cron",CRON_LAMBDA_ARN="${CRON_LAMBDA_ARN}",\
+EVENTBRIDGE_ROLE_ARN="${CRON_SCHEDULER_ROLE_ARN}",IDENTITY_TABLE_NAME="${DYNAMODB_TABLE}" \
     --region "$REGION" \
     --query 'agentRuntimeId' --output text)
 
@@ -377,6 +400,9 @@ done
 # Create ECS Fargate services for always-on deployment mode (one per security tier).
 # Services start with desiredCount=0 — admin enables per-position via Security Center.
 info "[4.5/8] Setting up Fargate tier services..."
+if [ "$SKIP_SERVICES" = "true" ]; then
+  info "  Skipping Fargate tier services (--skip-services)"
+else
 
 ECS_CLUSTER="${STACK_NAME}-always-on"
 BASE_TASK_DEF="${STACK_NAME}-always-on-agent"
@@ -419,9 +445,16 @@ else
 
     # Register tier-specific task definition with tier env vars
     TIER_FAMILY="${STACK_NAME}-tier-${TIER_NAME}"
-
+    case "$TIER_NAME" in
+      standard)    TIER_MODEL="${MODEL:-global.amazon.nova-2-lite-v1:0}"; TIER_GUARDRAIL="${GUARDRAIL_MODERATE_ID:-}" ;;
+      restricted)  TIER_MODEL="us.deepseek.r1-v1:0";                     TIER_GUARDRAIL="${GUARDRAIL_STRICT_ID:-}" ;;
+      engineering) TIER_MODEL="global.anthropic.claude-sonnet-4-5-20250929-v1:0"; TIER_GUARDRAIL="" ;;
+      executive)   TIER_MODEL="global.anthropic.claude-sonnet-4-6";       TIER_GUARDRAIL="" ;;
+    esac
     # Build container environment JSON
     TIER_ENV=$(cat <<ENVJSON
+
+
 [
   {"name":"STACK_NAME","value":"${STACK_NAME}"},
   {"name":"AWS_REGION","value":"${REGION}"},
@@ -507,6 +540,7 @@ print(json.dumps(defs))
   done
 
   success "Fargate tier services configured (desiredCount=0, activate via Security Center)"
+  fi
 fi
 
 # ── Step 5: Upload SOUL templates and knowledge docs ──────────────────────────
@@ -541,6 +575,53 @@ if [ -d "$SOUL_TEMPLATES/positions" ]; then
 fi
 
 success "Templates uploaded to s3://${S3_BUCKET}/"
+
+# ── Step 5.5: Deploy Cron Lambda code ────────────────────────────────────────
+if [ -n "$CRON_LAMBDA_ARN" ] && [ "$CRON_LAMBDA_ARN" != "None" ]; then
+  info "[5.5/8] Deploying Cron Lambda code..."
+  CRON_LAMBDA_DIR="$SCRIPT_DIR/lambda/cron"
+  if [ -f "$CRON_LAMBDA_DIR/index.py" ]; then
+    CRON_ZIP="/tmp/cron-lambda-$$.zip"
+    (cd "$CRON_LAMBDA_DIR" && zip -q "$CRON_ZIP" index.py)
+    CRON_FUNCTION_NAME="${STACK_NAME}-cron-executor"
+
+    # Read AGENTCORE_RUNTIME_ARN from SSM (runtime-id → ARN)
+    AGENTCORE_RUNTIME_ARN="arn:aws:bedrock-agentcore:${REGION}:${ACCOUNT_ID}:runtime/${RUNTIME_ID}"
+
+    # Update Lambda code
+    aws lambda update-function-code \
+      --function-name "$CRON_FUNCTION_NAME" \
+      --zip-file "fileb://$CRON_ZIP" \
+      --region "$REGION" &>/dev/null \
+      && success "  Cron Lambda code deployed" \
+      || warn "  Cron Lambda code update failed"
+
+    # Wait for update to complete before updating config
+    aws lambda wait function-updated \
+      --function-name "$CRON_FUNCTION_NAME" \
+      --region "$REGION" 2>/dev/null || sleep 5
+
+    # Update Lambda environment variables
+    aws lambda update-function-configuration \
+      --function-name "$CRON_FUNCTION_NAME" \
+      --environment "Variables={DYNAMODB_TABLE=${DYNAMODB_TABLE},AWS_REGION=${REGION},AGENTCORE_RUNTIME_ARN=${AGENTCORE_RUNTIME_ARN},AGENTCORE_QUALIFIER=DEFAULT,LAMBDA_TIMEOUT_SECONDS=600}" \
+      --region "$REGION" &>/dev/null \
+      && success "  Cron Lambda config updated" \
+      || warn "  Cron Lambda config update failed"
+
+    # Store cron config in SSM for container env derivation
+    aws ssm put-parameter --name "/openclaw/${STACK_NAME}/cron/lambda-arn" \
+      --value "$CRON_LAMBDA_ARN" --type String --overwrite --region "$REGION" &>/dev/null
+    aws ssm put-parameter --name "/openclaw/${STACK_NAME}/cron/scheduler-role-arn" \
+      --value "$CRON_SCHEDULER_ROLE_ARN" --type String --overwrite --region "$REGION" &>/dev/null
+
+    rm -f "$CRON_ZIP"
+  else
+    warn "  lambda/cron/index.py not found — skipping cron Lambda deploy"
+  fi
+else
+  info "[5.5/8] Cron Lambda not found in stack outputs — skipping (run CloudFormation update first)"
+fi
 
 # ── Step 6: DynamoDB table + Seed ─────────────────────────────────────────────
 # Create table if it doesn't exist (idempotent — no-op if already created)
@@ -675,6 +756,8 @@ EFS_ID=${EFS_ID}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
 AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
 AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+CRON_LAMBDA_ARN=${CRON_LAMBDA_ARN}
+CRON_SCHEDULER_ROLE_ARN=${CRON_SCHEDULER_ROLE_ARN}
 ENVEOF
 aws s3 cp "$ENV_TMPFILE" "s3://${S3_BUCKET}/_deploy/env" --region "$REGION" --quiet
 rm -f "$ENV_TMPFILE"

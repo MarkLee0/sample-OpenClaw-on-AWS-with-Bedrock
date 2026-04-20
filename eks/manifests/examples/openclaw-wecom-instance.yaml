@@ -7,7 +7,7 @@ metadata:
 spec:
   image:
     repository: ghcr.io/openclaw/openclaw
-    tag: "2026.4.2"
+    tag: "2026.4.14"
 
   plugins:
     - "@wecom/wecom-openclaw-plugin"
