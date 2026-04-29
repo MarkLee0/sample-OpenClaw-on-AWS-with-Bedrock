@@ -23,7 +23,6 @@ def get_sso_public_config():
         "issuer": cfg.get("issuer", ""),
         "clientId": cfg.get("clientId", ""),
         "scopes": cfg.get("scopes", "openid profile email"),
-        "autoRedirect": bool(cfg.get("autoRedirect")),
     }
     return JSONResponse(
         content=payload,

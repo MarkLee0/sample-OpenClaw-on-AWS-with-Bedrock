@@ -64,7 +64,7 @@ https://eiam.aliyun.com/
 
 ```
 Redirect URI:         https://portal.example.com/sso/callback
-Initiate Login URI:   https://portal.example.com/login
+Initiate Login URI:   https://portal.example.com/login?sso=idp
 ```
 
 粘贴到 IDaaS 应用配置:
@@ -250,6 +250,63 @@ https://portal.example.com/login
 | 2 | 退出登录回到 `/login` | SSO 按钮消失 | [ ] |
 | 3 | 重新勾选 Enable SSO → Save | | [ ] |
 | 4 | 刷新 `/login` | SSO 按钮再次出现 | [ ] |
+
+---
+
+### 3.7 测试场景 7:自动创建员工(Auto-Provisioning 默认启用)
+
+**目的**:验证 IDaaS 有新员工但 OpenClaw 还没建对应 employee 时,自动创建成功。
+
+**前置**:
+1. Settings → SSO tab → 确认 **Auto-create employees on first SSO login** 已勾选
+2. 填好 **Default Position**(例如 `pos-sde` Software Engineer)
+3. **Default Role** 保持 `employee`
+4. 保存配置
+5. 在 IDaaS 创建一个新员工 `新员工 X`,邮箱 `n***x@example.com`,授权访问 OpenClaw
+6. OpenClaw DynamoDB **不**手动添加此员工
+
+**步骤**:
+
+| 步骤 | 操作 | 预期 | 结果 |
+|---|---|---|---|
+| 1 | 退出登录,点 **Sign in with SSO** | | [ ] |
+| 2 | 用 `新员工 X` 账号在 IDaaS 登录 | | [ ] |
+| 3 | 回调后**无需**看到"请联系管理员"错误 | | [ ] |
+| 4 | 直接进入 `/portal` | | [ ] |
+| 5 | 右上角显示 `新员工 X` 姓名(或 email 前缀 `n***x`) | | [ ] |
+| 6 | 以 admin 身份登录,进入 Organization → Employees | 看到新员工 `emp-n***x` | [ ] |
+| 7 | 新员工的 position 是 `pos-sde`,department 是 `dept-eng` | 按 position 推导 | [ ] |
+| 8 | Agent Factory 页面看到新建的 `agent-n***x`,skills 等于 pos-sde 的 defaultSkills | | [ ] |
+| 9 | Audit Log 看到 `employee_auto_create` 事件,detail 包含 email/position/agent | | [ ] |
+
+### 3.8 测试场景 8:IdP-Initiated via `?sso=idp`
+
+**目的**:验证从 IDaaS 工作台点图标时,OpenClaw 自动进入 SSO 流程。
+
+**前置**:
+1. IDaaS 应用的 **登录发起 URI** 填为 `https://portal.example.com/login?sso=idp`
+
+**步骤**:
+
+| 步骤 | 操作 | 预期 | 结果 |
+|---|---|---|---|
+| 1 | 用无痕窗口访问 `https://portal.example.com/login` | 显示登录表单(没有自动跳) | [ ] |
+| 2 | 同窗口访问 `https://portal.example.com/login?sso=idp` | 立即跳 IDaaS | [ ] |
+| 3 | 完整流程到 `/portal` | | [ ] |
+| 4 | 打开 IDaaS 工作台 → 点 OpenClaw 图标 → 自动到 `/login?sso=idp` → 跳转 | 员工无感登录 | [ ] |
+
+### 3.9 测试场景 9:禁用 Auto-Provisioning 后的行为
+
+**目的**:验证 Auto-Provisioning 开关关闭时,IDaaS 新员工无法自动登录。
+
+**步骤**:
+
+| 步骤 | 操作 | 预期 | 结果 |
+|---|---|---|---|
+| 1 | admin 登录 → Settings → SSO → 取消勾选 Auto-create → Save | | [ ] |
+| 2 | 让 `新员工 Y`(OpenClaw 没此员工) 尝试 SSO 登录 | | [ ] |
+| 3 | 回调后跳回 `/login`,显示"未找到邮箱为 y***@... 的员工。请联系管理员" | | [ ] |
+| 4 | 重新勾选 Auto-create → Save → `新员工 Y` 再试 | 这次自动创建成功 | [ ] |
 
 ---
 

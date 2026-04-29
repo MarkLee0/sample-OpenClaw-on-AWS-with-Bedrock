@@ -49,7 +49,7 @@ The exact UI varies by provider but the required settings are the same.
 | Application type | **Single-Page Application** (SPA) / **Public Client** |
 | Grant type | **Authorization Code** + **PKCE** |
 | Redirect URI | `https://your-portal.example.com/sso/callback` |
-| Initiate Login URI (optional) | `https://your-portal.example.com/login` |
+| Initiate Login URI (optional) | `https://your-portal.example.com/login?sso=idp` — enables IdP-initiated flow |
 | Post Logout Redirect URI (optional) | `https://your-portal.example.com/login` |
 | Scope | `openid profile email` |
 | ID Token signing algorithm | RS256 |
@@ -65,7 +65,7 @@ The exact UI varies by provider but the required settings are the same.
    - **Authorization Mode**: `authorization_code`
    - **PKCE**: Enabled (required)
    - **Redirect URI**: `https://your-portal.example.com/sso/callback`
-   - **Initiate Login URI**: `https://your-portal.example.com/login`
+   - **Initiate Login URI**: `https://your-portal.example.com/login?sso=idp`
 4. After saving, copy:
    - **Issuer URL**, e.g.
      - Custom domain: `https://{prefix}.aliyunidaas.com/api/v2/iauths_system/oauth2`
@@ -124,7 +124,7 @@ The exact UI varies by provider but the required settings are the same.
    - The backend fetches `{issuer}/.well-known/openid-configuration`
    - Success means the Issuer is reachable and returns valid OIDC metadata
 5. Check **Enable SSO** to show the "Sign in with SSO" button on login page
-6. (Optional) Check **Auto-redirect on login page** to enable IdP-initiated flow
+6. (Optional) Configure **Auto-Provisioning** — see Step 3
 7. Click **Save**
 
 The configuration takes effect immediately. No restart required.
@@ -135,22 +135,64 @@ The backend identifies SSO users by the `email` claim in the ID token. Each
 employee that should be able to sign in via SSO must have a matching `email`
 field in their DynamoDB record.
 
+There are two ways to link SSO users to employees:
+
+### Option A: Auto-Provisioning (default, recommended)
+
+**Enabled by default.** When an SSO user signs in for the first time and
+no matching employee exists, OpenClaw will automatically create:
+
+- A new employee record (id based on email prefix, e.g.
+  `jiatingcool@gmail.com` → `emp-jiatingcool`; collisions get a
+  random suffix like `emp-jiatingcool-a3f0`)
+- A personal agent with skills inherited from the configured Default Position
+- An audit log entry (`eventType: employee_auto_create`, `createdVia: sso_auto`)
+
+**Configure Auto-Provisioning in Settings → SSO tab:**
+
+| Setting | Default | Required |
+|---|---|---|
+| **Auto-create employees on first SSO login** | ✓ on | — |
+| **Default Position** | (empty) | Yes, when auto-create is enabled |
+| **Default Role** | `employee` | One of `employee`, `manager`, `admin` |
+
+After first login, the admin can refine the employee's position/role/skills
+via **Organization → Employees** or **Agent Factory**.
+
+### Option B: Manual Provisioning
+
+Disable auto-create (Settings → SSO → uncheck **Auto-create employees on
+first SSO login**) to require admins to create employee records manually
+before anyone can sign in. Use this for tighter control.
+
 **In the admin console:**
 
-**Organization → Employees** → edit an employee → set the email address that
-matches their IdP login email.
+**Organization → Employees** → **Add Employee** — the form requires Name
+and Position. **Email** is optional but becomes the SSO identity matching
+key — if the employee will sign in via SSO, set their email to exactly
+match the email claim from the IdP.
+
+Validation rules (applied both in UI and on the backend):
+
+- Email is optional — employees who never sign in via SSO can leave it empty
+- If provided, must be a valid email format (`.*@.*\..*`)
+- Must be unique across the organization
+- Stored in lowercase (case-insensitive matching)
 
 **Example:**
 
-| Employee DynamoDB record | IdP profile |
+| Employee UI form | IdP profile |
 |---|---|
-| `email`: `mike.johnson@acme.com` | username: `mike.johnson@acme.com` |
+| Email: `mike.johnson@acme.com` | username: `mike.johnson@acme.com` |
 
 When `mike.johnson` signs in via SSO:
 
 1. IdP issues an id_token with `email: mike.johnson@acme.com`
 2. OpenClaw backend finds the employee with that email
 3. User is signed in as `emp-mike` with role, department, permissions loaded
+
+If no matching employee exists and auto-create is disabled, the user sees:
+`SSO 登录成功,但未找到邮箱为 xxx 的员工。请联系管理员。`
 
 ## Login Flows Supported
 
@@ -167,11 +209,12 @@ User opens https://portal.example.com
 
 ### IdP-Initiated (user starts at IdP workspace)
 
-Requires **Auto-redirect on login page** to be enabled.
+Triggered automatically by a `?sso=idp` URL parameter. Configure the
+**Initiate Login URI** in your IdP as `/login?sso=idp`.
 
 ```
 User clicks OpenClaw icon in IdP workspace
-  → IdP redirects to https://portal.example.com/login
+  → IdP redirects to https://portal.example.com/login?sso=idp
   → Portal immediately triggers SSO login (no manual click)
   → IdP recognizes existing session, silently issues token
   → User lands in Portal with no manual steps
