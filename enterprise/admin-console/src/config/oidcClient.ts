@@ -13,7 +13,6 @@ export interface SsoPublicConfig {
     issuer: string;
     clientId: string;
     scopes: string;
-    autoRedirect: boolean;
 }
 
 let _cachedConfig: SsoPublicConfig | null = null;

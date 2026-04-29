@@ -49,10 +49,12 @@ export default function Login() {
         const enabled = !!cfg?.enabled;
         setSsoEnabled(enabled);
         setSsoChecked(true);
-        // IdP-Initiated: autoRedirect=true 且无 error query → 自动跳转
+        // IdP-Initiated: URL 带 ?sso=idp 参数时自动触发 SSO
+        // (通过 IdP 应用配置的 initiate_login_uri=https://.../login?sso=idp 触发)
+        const idpInitiated = searchParams.get('sso') === 'idp';
         if (
           enabled &&
-          cfg?.autoRedirect &&
+          idpInitiated &&
           !searchParams.get('error') &&
           !autoTriggered.current
         ) {

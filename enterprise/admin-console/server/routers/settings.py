@@ -826,7 +826,9 @@ def get_sso_config(authorization: str = Header(default="")):
         "issuer": cfg.get("issuer", ""),
         "clientId": cfg.get("clientId", ""),
         "scopes": cfg.get("scopes", "openid profile email"),
-        "autoRedirect": bool(cfg.get("autoRedirect")),
+        "autoCreateEnabled": bool(cfg.get("autoCreateEnabled", True)),
+        "defaultPositionId": cfg.get("defaultPositionId", ""),
+        "defaultRole": cfg.get("defaultRole", "employee"),
         "updatedAt": cfg.get("updatedAt", ""),
         "updatedBy": cfg.get("updatedBy", ""),
     }
@@ -841,7 +843,9 @@ def update_sso_config(body: dict, authorization: str = Header(default="")):
     client_id = (body.get("clientId") or "").strip()
     scopes = (body.get("scopes") or "openid profile email").strip()
     enabled = bool(body.get("enabled"))
-    auto_redirect = bool(body.get("autoRedirect"))
+    auto_create_enabled = bool(body.get("autoCreateEnabled", True))
+    default_position_id = (body.get("defaultPositionId") or "").strip()
+    default_role = (body.get("defaultRole") or "employee").strip()
 
     # 基础校验: 启用状态下 issuer 和 clientId 不能空
     if enabled:
@@ -850,12 +854,23 @@ def update_sso_config(body: dict, authorization: str = Header(default="")):
         if not issuer.startswith("https://") and not issuer.startswith("http://localhost"):
             raise HTTPException(400, "issuer must be HTTPS (only localhost allowed for HTTP)")
 
+    # Auto-create 启用时需要合法的 defaultPositionId 和 defaultRole
+    if enabled and auto_create_enabled:
+        if not default_position_id:
+            raise HTTPException(400, "defaultPositionId is required when auto-create is enabled")
+        if not db.get_position(default_position_id):
+            raise HTTPException(400, f"defaultPositionId '{default_position_id}' not found")
+        if default_role not in ("employee", "manager", "admin"):
+            raise HTTPException(400, "defaultRole must be one of: employee, manager, admin")
+
     cfg = {
         "enabled": enabled,
         "issuer": issuer,
         "clientId": client_id,
         "scopes": scopes,
-        "autoRedirect": auto_redirect,
+        "autoCreateEnabled": auto_create_enabled,
+        "defaultPositionId": default_position_id,
+        "defaultRole": default_role,
         "updatedAt": datetime.now(timezone.utc).isoformat(),
         "updatedBy": user.employee_id,
     }

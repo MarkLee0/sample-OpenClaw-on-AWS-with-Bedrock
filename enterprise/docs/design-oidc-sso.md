@@ -552,9 +552,92 @@ Redirect URI: https://portal.example.com/sso/callback
 
 ---
 
-## 10. 附录
+## 10. Phase 2 增量功能(2026-04-28 追加)
 
-### 10.1 术语
+在 Phase 1 通用 OIDC 基础上,新增两个使用性改进:
+
+### 10.1 IdP-Initiated 自动跳转改用 URL 参数
+
+**问题**:Phase 1 里只有 `autoRedirect=true` 时 `/login` 才自动跳 SSO。
+管理员勾了这个开关,所有访问 `/login` 的用户都会被跳走(包括管理员想用密码兜底时)。
+
+**解决**:引入 URL 参数 `?sso=idp` 作为 IdP-Initiated 的显式标记,并**移除
+`autoRedirect` 字段**。
+
+- IdP 应用配置的 Initiate Login URI 从 `/login` 改为 `/login?sso=idp`
+- 员工从 IdP 工作台点图标 → IdP 跳到 `/login?sso=idp` → 自动触发 SSO
+- 员工直接敲 URL `/login` → 保持登录页,可选择密码或点按钮
+- `autoRedirect` 字段及开关从 backend/前端完全移除(新功能,无存量数据)
+
+### 10.2 自动创建员工(Auto-Provisioning)
+
+**问题**:Phase 1 里员工 email 匹配不到就拒绝登录,每个员工都要
+管理员手动在 Organization 页面创建,企业几十上百员工效率低。
+
+**解决**:SSO 配置里增加自动创建开关 + 默认 Position / Role。
+
+**新增 `CONFIG#sso` 字段**:
+
+| 字段 | 类型 | 默认 | 说明 |
+|---|---|---|---|
+| `autoCreateEnabled` | bool | `true` | 启用自动创建 |
+| `defaultPositionId` | str | `""` | 新员工的 position,必填(启用 auto-create 时) |
+| `defaultRole` | str | `"employee"` | 新员工的 role |
+
+**新增 `EMP#` 字段**:
+
+| 字段 | 说明 |
+|---|---|
+| `createdVia` | `"sso_auto"` / `"manual"` / `"seed"`(现有员工无此字段) |
+
+**自动创建流程**:
+
+```
+OIDC callback → email 查员工未命中
+  ↓
+读 CONFIG#sso
+  ↓ autoCreateEnabled == true ?
+否 → 原错误提示"请联系管理员"
+是 ↓
+  1. 按 email 前缀生成 emp-id (如 jiatingcool@gmail.com → emp-jiatingcool)
+  2. 若 id 冲突,加 4 字符随机后缀 (emp-jiatingcool-a3f0)
+  3. 按 defaultPositionId 查 position,推导 department
+  4. 按 position 默认 skills 建一个 agent (agent-jiatingcool)
+  5. 创建 employee 记录 (createdVia=sso_auto)
+  6. 写审计日志 (eventType=employee_auto_create)
+  7. 返回 UserContext → 登录成功
+```
+
+**为什么没加"Agent 模板"字段**:同一 position 内的 Agent 天然几乎相同
+(skills/tools 继承自 position),模板复制容易误配(如模板是 SA 的 Agent,
+但新员工实际是 Sales,Skills 就错了)。直接从 position 继承最安全。
+
+**实施文件改动清单**:
+```
+enterprise/admin-console/server/
+├── auth.py                       +150 行
+│   + _auto_create_employee_from_oidc
+│   + _user_from_oidc_claims 加自动创建分支
+└── routers/settings.py           +30 行
+    ~ /settings/sso GET/PUT 加新字段 + 校验
+
+enterprise/admin-console/src/pages/
+├── Login.tsx                     +3 行
+│   + 识别 ?sso=idp URL 参数
+└── Settings.tsx                  +70 行
+    + Auto-Provisioning 段落 (Position 下拉 + Role 下拉 + 开关)
+
+enterprise/docs/
+├── design-oidc-sso.md            本章节
+├── OIDC_SSO_SETUP.md             新增 Auto-Provisioning 段落 + IdP URL 改动
+└── test-oidc-sso-alibaba-idaas.md 新增测试场景 7/8
+```
+
+---
+
+## 11. 附录
+
+### 11.1 术语
 
 | 术语 | 说明 |
 |---|---|
@@ -568,7 +651,7 @@ Redirect URI: https://portal.example.com/sso/callback
 | JWKS | JSON Web Key Set，IdP 发布的公钥集合，用于验 RS256 签名 |
 | id_token | OIDC 定义的用户身份令牌，JWT 格式，IdP 签名 |
 
-### 10.2 参考
+### 11.2 参考
 
 - [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)
 - [RFC 6749 - OAuth 2.0](https://tools.ietf.org/html/rfc6749)
@@ -577,7 +660,7 @@ Redirect URI: https://portal.example.com/sso/callback
 - [oidc-client-ts 文档](https://github.com/authts/oidc-client-ts)
 - [阿里云 IDaaS OIDC 集成文档](https://help.aliyun.com/zh/idaas/developer-reference/api-eiam-2021-12-01-oauth2-oidc-api/)
 
-### 10.3 演进历史
+### 11.3 演进历史
 
 | 方案 | 评估结果 |
 |---|---|

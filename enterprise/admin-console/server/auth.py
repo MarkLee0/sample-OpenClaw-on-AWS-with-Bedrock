@@ -172,7 +172,7 @@ def _verify_oidc_token(token: str) -> Optional[dict]:
 
 
 def _user_from_oidc_claims(claims: dict) -> Optional[UserContext]:
-    """按 email claim 在 DynamoDB 查找员工。"""
+    """按 email claim 在 DynamoDB 查找员工,未命中时按 SSO 配置决定是否自动创建。"""
     email = (
         claims.get("email")
         or claims.get("preferred_username")
@@ -185,9 +185,15 @@ def _user_from_oidc_claims(claims: dict) -> Optional[UserContext]:
 
     import db
     emp = db.get_employee_by_email(email)
+
+    # 未匹配到员工:根据 SSO 配置决定是否自动创建
     if not emp:
-        logger.warning("No employee matches OIDC email: %s", email)
-        return None
+        cfg = _get_sso_config() or {}
+        if cfg.get("autoCreateEnabled"):
+            emp = _auto_create_employee_from_oidc(claims, email)
+        if not emp:
+            logger.warning("No employee matches OIDC email: %s", email)
+            return None
 
     return UserContext(
         employee_id=emp["id"],
@@ -197,6 +203,114 @@ def _user_from_oidc_claims(claims: dict) -> Optional[UserContext]:
         position_id=emp.get("positionId", ""),
         email=email,
     )
+
+
+def _auto_create_employee_from_oidc(claims: dict, email: str) -> Optional[dict]:
+    """按 CONFIG#sso 的 provisioning 参数自动创建员工 + 配套 agent + 审计日志。
+
+    失败场景(返回 None):
+      - defaultPositionId 未配置或对应 position 不存在
+    """
+    import secrets as _secrets
+    from datetime import datetime, timezone
+
+    import db
+
+    cfg = _get_sso_config() or {}
+    pos_id = (cfg.get("defaultPositionId") or "").strip()
+    if not pos_id:
+        logger.warning("Auto-create skipped: defaultPositionId not set in CONFIG#sso")
+        return None
+
+    pos = db.get_position(pos_id)
+    if not pos:
+        logger.warning("Auto-create skipped: defaultPositionId=%s not found", pos_id)
+        return None
+
+    # 1. 生成 id 和 employeeNo (email 前缀,冲突时加 4 字符随机后缀)
+    email_prefix = email.split("@", 1)[0].lower()
+    # 清理成合法 id 字符 (字母/数字/连字符/下划线)
+    import re as _re
+    safe_prefix = _re.sub(r"[^a-zA-Z0-9_-]", "-", email_prefix) or "user"
+    emp_id = f"emp-{safe_prefix}"
+    employee_no = safe_prefix
+    if db.get_employee(emp_id):
+        suffix = _secrets.token_hex(2)  # 4 字符
+        emp_id = f"emp-{safe_prefix}-{suffix}"
+        employee_no = f"{safe_prefix}-{suffix}"
+
+    # 2. 确定 name (IdP claim,或退化到 email 前缀)
+    name = (claims.get("name") or "").strip() or safe_prefix
+
+    # 3. 创建配套 agent,复用 position 默认 skills / toolAllowlist
+    agent_id = f"agent-{emp_id.removeprefix('emp-')}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    agent = {
+        "id": agent_id,
+        "name": f"Agent - {name}",
+        "employeeId": emp_id,
+        "employeeName": name,
+        "positionId": pos_id,
+        "positionName": pos.get("name", ""),
+        "status": "active",
+        "skills": pos.get("defaultSkills", []),
+        "channels": [],
+        "soulVersions": {"global": 3, "position": 1, "personal": 0},
+        "createdAt": now_iso,
+        "updatedAt": now_iso,
+        "createdVia": "sso_auto",
+    }
+    try:
+        db.create_agent(agent)
+    except Exception as e:
+        logger.error("Auto-create agent failed for %s: %s", emp_id, e)
+        return None
+
+    # 4. 创建员工记录
+    role = cfg.get("defaultRole", "employee")
+    if role not in ("employee", "manager", "admin"):
+        role = "employee"
+
+    emp = {
+        "id": emp_id,
+        "name": name,
+        "email": email,
+        "employeeNo": employee_no,
+        "positionId": pos_id,
+        "positionName": pos.get("name", ""),
+        "departmentId": pos.get("departmentId", ""),
+        "departmentName": pos.get("departmentName", ""),
+        "role": role,
+        "channels": [],
+        "agentId": agent_id,
+        "agentStatus": "active",
+        "createdVia": "sso_auto",
+        "createdAt": now_iso,
+    }
+    try:
+        db.create_employee(emp)
+    except Exception as e:
+        logger.error("Auto-create employee failed for %s: %s", emp_id, e)
+        return None
+
+    # 5. 审计日志
+    try:
+        db.create_audit_entry({
+            "timestamp": now_iso,
+            "eventType": "employee_auto_create",
+            "actorId": "system",
+            "actorName": "OIDC SSO",
+            "targetType": "employee",
+            "targetId": emp_id,
+            "detail": f"Auto-created via SSO: email={email}, position={pos_id}, agent={agent_id}",
+            "status": "success",
+        })
+    except Exception as e:
+        # 审计失败不阻塞登录
+        logger.warning("Auto-create audit log failed: %s", e)
+
+    logger.info("Auto-created employee %s (email=%s, position=%s)", emp_id, email, pos_id)
+    return emp
 
 
 # ── 本地 JWT 签发与验证 ──────────────────────────────────────────────────────

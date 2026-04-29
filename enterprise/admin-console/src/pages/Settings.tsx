@@ -545,12 +545,15 @@ function SystemTab() {
 
 function SsoTab() {
   const [cfg, setCfg] = useState<any>({
-    enabled: false, issuer: '', clientId: '', scopes: 'openid profile email', autoRedirect: false,
+    enabled: false, issuer: '', clientId: '',
+    scopes: 'openid profile email',
+    autoCreateEnabled: true, defaultPositionId: '', defaultRole: 'employee',
   });
   const [testResult, setTestResult] = useState<{ ok: boolean; detail: string } | null>(null);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [positions, setPositions] = useState<Array<{ id: string; name: string; departmentName?: string }>>([]);
 
   const token = localStorage.getItem('openclaw_token') || '';
   const authHeader = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -559,6 +562,11 @@ function SsoTab() {
     fetch('/api/v1/settings/sso', { headers: authHeader })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => setCfg((prev: any) => ({ ...prev, ...data })))
+      .catch(() => {});
+    // 拉 position 列表用于 Default Position 下拉
+    fetch('/api/v1/org/positions', { headers: authHeader })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => setPositions(Array.isArray(data) ? data : []))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -607,7 +615,7 @@ function SsoTab() {
   };
 
   const callbackUrl = `${window.location.origin}/sso/callback`;
-  const initiateUrl = `${window.location.origin}/login`;
+  const initiateUrl = `${window.location.origin}/login?sso=idp`;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -688,19 +696,63 @@ function SsoTab() {
               onChange={e => setCfg({ ...cfg, enabled: e.target.checked })}
               className="w-4 h-4 accent-primary" />
           </label>
+        </div>
 
-          <label className="flex items-center justify-between rounded-xl bg-surface-dim px-4 py-3 cursor-pointer">
+        {/* Auto-Provisioning 段落 */}
+        <div className="mt-6 pt-6 border-t border-dark-border">
+          <h4 className="text-sm font-semibold text-text-primary mb-1">Auto-Provisioning</h4>
+          <p className="text-xs text-text-muted mb-4">
+            When an SSO user signs in for the first time and no matching employee exists,
+            automatically create the employee record and a personal agent.
+          </p>
+
+          <label className="flex items-center justify-between rounded-xl bg-surface-dim px-4 py-3 cursor-pointer mb-4">
             <div>
-              <p className="text-sm text-text-primary">Auto-redirect on login page</p>
+              <p className="text-sm text-text-primary">Auto-create employees on first SSO login</p>
               <p className="text-xs text-text-muted">
-                Automatically trigger SSO login when employees land on <span className="font-mono">/login</span>.
-                Required for IdP-initiated flow (clicking the app icon in IdP workspace).
+                Disable to require admins to create employees manually before they can sign in.
               </p>
             </div>
-            <input type="checkbox" checked={!!cfg.autoRedirect}
-              onChange={e => setCfg({ ...cfg, autoRedirect: e.target.checked })}
+            <input type="checkbox" checked={!!cfg.autoCreateEnabled}
+              onChange={e => setCfg({ ...cfg, autoCreateEnabled: e.target.checked })}
               className="w-4 h-4 accent-primary" />
           </label>
+
+          {cfg.autoCreateEnabled && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-text-muted mb-1">Default Position</label>
+                <select
+                  value={cfg.defaultPositionId}
+                  onChange={e => setCfg({ ...cfg, defaultPositionId: e.target.value })}
+                  className="w-full rounded-lg border border-dark-border bg-dark-bg px-4 py-2.5 text-sm text-text-primary focus:border-primary focus:outline-none"
+                >
+                  <option value="">— Select a position —</option>
+                  {positions.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}{p.departmentName ? ` (${p.departmentName})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-text-muted mt-1">
+                  New employees will be assigned this position. Skills and tools are inherited from the position's defaults.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-muted mb-1">Default Role</label>
+                <select
+                  value={cfg.defaultRole}
+                  onChange={e => setCfg({ ...cfg, defaultRole: e.target.value })}
+                  className="w-full rounded-lg border border-dark-border bg-dark-bg px-4 py-2.5 text-sm text-text-primary focus:border-primary focus:outline-none"
+                >
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 测试连接结果 */}
@@ -728,7 +780,7 @@ function SsoTab() {
         )}
 
         <div className="flex gap-3 mt-6">
-          <Button onClick={handleTest} disabled={testing || !cfg.issuer} variant="secondary">
+          <Button onClick={handleTest} disabled={testing || !cfg.issuer} variant="default">
             {testing ? 'Testing…' : 'Test Connection'}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
